@@ -665,6 +665,10 @@
     </div>
 
     <div class="sidebar-footer">
+      <button class="clear-data-btn" onclick="confirmClear()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Clear Data
+      </button>
       <div class="sidebar-user">
         <div class="su-avatar" id="userAvatar"></div>
         <div>
@@ -815,6 +819,42 @@
   </div>
 </div>
 
+<!-- Clear Data Modal -->
+<div class="modal-backdrop" id="clearModal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Clear Data</h3>
+      <button class="btn-ghost" onclick="closeClearModal()" style="padding:5px 12px;font-size:0.82rem">✕</button>
+    </div>
+    <div style="padding:24px">
+      <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:20px;line-height:1.6">Choose what to clear. This cannot be undone.</p>
+      <div class="clear-options">
+        <label class="clear-option">
+          <input type="radio" name="clearScope" value="month" checked />
+          <div>
+            <div class="co-title">Current month only</div>
+            <div class="co-sub">Removes all transactions for <span id="clearMonthLabel"></span></div>
+          </div>
+        </label>
+        <label class="clear-option">
+          <input type="radio" name="clearScope" value="all" />
+          <div>
+            <div class="co-title">All data</div>
+            <div class="co-sub">Removes every transaction across all months</div>
+          </div>
+        </label>
+      </div>
+      <div style="margin-top:20px;padding:12px 14px;background:var(--red-lt);border:1px solid #fca5a5;border-radius:8px;font-size:0.8rem;color:var(--red)">
+        <strong>Warning:</strong> If Google Sheets is connected, this also deletes rows from your sheet. This action cannot be undone.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeClearModal()">Cancel</button>
+      <button class="btn" style="background:var(--red);box-shadow:0 2px 8px rgba(220,38,38,0.3)" onclick="executeClear()">Clear Data</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- SheetJS -->
@@ -910,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //  Paste your deployed Apps Script Web App URL below.
 //  See Code.gs for step-by-step deployment instructions.
 // 
-const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ApSqJ1Nn6nV_FlF_-3pRKKdYyszZ254Ah24-vLGye3tkhccIRpP-rp1chHx6Hh2w/exec";
 // 
 
 const CATEGORIES = [
@@ -1674,6 +1714,67 @@ async function confirmImport() {
 }
 
 function showImportPreview() {}  // kept for compatibility
+
+// ── Clear Data ────────────────────────────────────────────────
+function confirmClear() {
+  // Set the month label in modal
+  const el = document.getElementById('clearMonthLabel');
+  if (el) el.textContent = monthName(currentYear, currentMonth);
+  document.getElementById('clearModal').style.display = 'flex';
+}
+
+function closeClearModal() {
+  document.getElementById('clearModal').style.display = 'none';
+}
+
+async function executeClear() {
+  const scope = document.querySelector('input[name="clearScope"]:checked').value;
+  const btn = document.querySelector('#clearModal .btn');
+  btn.disabled = true; btn.textContent = 'Clearing…';
+
+  try {
+    if (scope === 'month') {
+      await clearMonth(currentYear, currentMonth);
+      showToast('Transactions cleared for ' + monthName(currentYear, currentMonth));
+    } else {
+      await clearAll();
+      showToast('All data cleared');
+    }
+    closeClearModal();
+    // Invalidate all cache
+    Object.keys(_cache).forEach(k => delete _cache[k]);
+    await render();
+  } catch(err) {
+    showToast('Clear failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Clear Data';
+  }
+}
+
+async function clearMonth(year, month) {
+  if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+    // localStorage mode
+    const key = \`expenses_\${year}_\${String(month+1).padStart(2,'0')}\`;
+    localStorage.removeItem(key);
+    return;
+  }
+  // Google Sheets mode — delete all rows for this month
+  const data = await apiFetch({ action: 'clearMonth', year, month: String(month+1).padStart(2,'0') });
+  if (data.error) throw new Error(data.error);
+}
+
+async function clearAll() {
+  if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+    // localStorage mode — remove all expense keys
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('expenses_'))
+      .forEach(k => localStorage.removeItem(k));
+    return;
+  }
+  // Google Sheets mode — clear entire sheet
+  const data = await apiFetch({ action: 'clearAll' });
+  if (data.error) throw new Error(data.error);
+}
 
 
 
