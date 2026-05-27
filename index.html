@@ -712,58 +712,27 @@
               <span class="card-badge">Manual Entry</span>
             </div>
 
-            <!-- Type toggle -->
             <div class="form-group">
-              <label>Transaction Type</label>
-              <div class="type-toggle">
-                <button class="type-btn active" id="typeDebit" onclick="setType('debit')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                  Debit
-                </button>
-                <button class="type-btn" id="typeCredit" onclick="setType('credit')">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                  Credit
-                </button>
+              <label>Particulars</label>
+              <input type="text" id="expNote"
+                placeholder="e.g. UPI/P2M/MUMBAI METRO ONE/AXIS BANK"
+                oninput="autoFillCategory(this.value)" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group">
+                <label style="color:var(--green)">Credit (₹)</label>
+                <input type="number" id="expAmtCredit" placeholder="0.00" min="0" step="0.01" />
+              </div>
+              <div class="form-group">
+                <label style="color:var(--red)">Debit (₹)</label>
+                <input type="number" id="expAmt" placeholder="0.00" min="0" step="0.01" />
               </div>
             </div>
 
             <div class="form-group">
-              <label>Transaction Date</label>
+              <label>Tran Date</label>
               <input type="date" id="expDate" />
-            </div>
-
-            <div class="form-group">
-              <label>Bank / Account</label>
-              <select id="expBank">
-                <option value="">Select bank</option>
-                <option>SBI</option>
-                <option>HDFC Bank</option>
-                <option>ICICI Bank</option>
-                <option>Axis Bank</option>
-                <option>Kotak Bank</option>
-                <option>Bank of India</option>
-                <option>Canara Bank</option>
-                <option>PNB</option>
-                <option>Union Bank</option>
-                <option>Cash</option>
-                <option>UPI / Wallet</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Category</label>
-              <select id="expCat"></select>
-            </div>
-
-            <div class="form-group">
-              <label>Amount (₹)</label>
-              <input type="number" id="expAmt" placeholder="0.00" min="0" step="0.01" />
-            </div>
-
-            <div class="form-group">
-              <label>Note <span style="color:var(--muted);font-weight:400">(optional)</span></label>
-              <input type="text" id="expNote" placeholder="e.g. Monthly salary, Grocery run" />
             </div>
 
             <button class="btn" id="addTxBtn" onclick="addExpense()">+ Add Transaction</button>
@@ -849,7 +818,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- SheetJS -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -945,13 +914,25 @@ const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 // 
 
 const CATEGORIES = [
-  "Rent","Medical","Kishori","Light Bill","Gas",
-  "General Store","Vegetables","Mobile Bills","Sheetal","Jitendra","Nishi"
+  "Transport",
+  "Medical & Chemist",
+  "Grocery & General Store",
+  "Gold & Investments",
+  "Online Shopping",
+  "Rent",
+  "Light Bill",
+  "Gas",
+  "Mobile & Internet",
+  "Food & Dining",
+  "Personal Transfer",
+  "Salary & Income",
+  "Other"
 ];
 
 const CAT_COLORS = [
-  "#6c63ff","#ff6584","#3ecf8e","#f6a623","#38bdf8",
-  "#e879f9","#fb923c","#34d399","#a78bfa","#f87171","#60a5fa"
+  "#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6",
+  "#6366f1","#06b6d4","#f97316","#ec4899","#14b8a6",
+  "#84cc16","#10b981","#94a3b8"
 ];
 
 const CAT_COLOR_MAP = {};
@@ -964,12 +945,10 @@ async function init() {
   currentYear = now.getFullYear();
   currentMonth = now.getMonth();
 
-  // Populate category selects
-  const sel = document.getElementById('expCat');
+  // Populate filter category select only
   const filterSel = document.getElementById('filterCat');
-  CATEGORIES.forEach(c => {
-    sel.innerHTML += `<option value="${c}">${c}</option>`;
-    filterSel.innerHTML += `<option value="${c}">${c}</option>`;
+  CATEGORIES.forEach(cat => {
+    filterSel.innerHTML += `<option value="${cat}">${cat}</option>`;
   });
 
   // Default date to today
@@ -1113,43 +1092,46 @@ function monthName(y, m) {
   return new Date(y, m, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 }
 
-// Track selected transaction type
-let _txType = 'debit';
+// setType kept for compatibility
+function setType(type) {}
 
-function setType(type) {
-  _txType = type;
-  const dBtn = document.getElementById('typeDebit');
-  const cBtn = document.getElementById('typeCredit');
-  dBtn.classList.toggle('active', type === 'debit');
-  dBtn.classList.toggle('debit',  type === 'debit');
-  cBtn.classList.toggle('active', type === 'credit');
-  cBtn.classList.toggle('credit', type === 'credit');
-  // Update Add button colour
-  const addBtn = document.getElementById('addTxBtn');
-  if (addBtn) {
-    addBtn.style.background = type === 'credit' ? 'var(--green)' : 'var(--accent)';
-    addBtn.style.boxShadow  = type === 'credit'
-      ? '0 2px 6px rgba(22,163,74,0.3)' : '0 2px 6px rgba(37,99,235,0.25)';
+function autoFillCategory(text) {
+  // kept for compatibility — no-op since category field removed
+}
+
+function autoClassifyReturn(text) {
+  if (!text) return 'Other';
+  const lower = text.toLowerCase();
+  for (const rule of CLASSIFY_RULES) {
+    for (const kw of rule.keywords) {
+      if (lower.includes(kw)) return rule.cat;
+    }
   }
+  return 'Other';
 }
 
 async function addExpense() {
-  const date = document.getElementById('expDate').value;
-  const cat  = document.getElementById('expCat').value;
-  const bank = document.getElementById('expBank').value;
-  const amt  = parseFloat(document.getElementById('expAmt').value);
-  const note = document.getElementById('expNote').value.trim();
-  const type = _txType;
+  const date        = document.getElementById('expDate').value;
+  const note        = document.getElementById('expNote').value.trim();
+  const creditAmt   = parseFloat(document.getElementById('expAmtCredit').value) || 0;
+  const debitAmt    = parseFloat(document.getElementById('expAmt').value) || 0;
 
-  if (!date) { showToast('Please select a transaction date', 'error'); return; }
-  if (!amt || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+  if (!date) { showToast('Please select a Tran Date', 'error'); return; }
+  if (creditAmt <= 0 && debitAmt <= 0) { showToast('Enter a Credit or Debit amount', 'error'); return; }
+  if (creditAmt > 0 && debitAmt > 0)   { showToast('Fill either Credit or Debit, not both', 'error'); return; }
+
+  const type = creditAmt > 0 ? 'credit' : 'debit';
+  const amt  = creditAmt > 0 ? creditAmt : debitAmt;
+  // Auto-classify from particulars
+  const cat  = autoClassifyReturn(note) || 'Other';
 
   const btn = document.getElementById('addTxBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   try {
-    await saveExpenseToSheet({ id: Date.now(), date, cat, bank, amt, note, type });
+    await saveExpenseToSheet({ id: Date.now(), date, cat, bank: '', amt, note, type });
     document.getElementById('expAmt').value = '';
+    document.getElementById('expAmtCredit').value = '';
     document.getElementById('expNote').value = '';
     showToast(type === 'credit' ? 'Credit recorded!' : 'Debit recorded!');
     await render();
@@ -1334,17 +1316,19 @@ function showToast(msg, type) {
 
 //  Auto-Classification Rules 
 const CLASSIFY_RULES = [
-  { cat: 'Rent',          keywords: ['rent','housing','flat','pg','lodge','landlord','house rent','niwas','awas'] },
-  { cat: 'Medical',       keywords: ['pharmacy','medical','hospital','clinic','health','chemist','medicine','apollo','medplus','netmeds','1mg','wellness','diagnostic','lab','nursing','dispensary','pharma'] },
-  { cat: 'Kishori',       keywords: ['kishori'] },
-  { cat: 'Light Bill',    keywords: ['electricity','mseb','bescom','light bill','torrent power','bijli','electric','wbsedcl','tsspdcl','tneb','cesc','adani electric','bses','discom','power bill','energyبل','mahadiscom','mahavitaran','uppcl','apspdcl'] },
-  { cat: 'Gas',           keywords: ['gas','lpg','indane','hp gas','bharat gas','cylinder','igl','mgl','mahanagar gas','piped gas','png','gas bill'] },
-  { cat: 'General Store', keywords: ['kirana','general store','grocery','supermarket','d-mart','dmart','bigbasket','blinkit','zepto','jiomart','grofers','reliance fresh','more retail','nilgiris','spencers','hypermarket','departmental','provision','convenient store','easyday','spar','star bazaar','nature basket','walmart','metro cash'] },
-  { cat: 'Vegetables',    keywords: ['vegetable','sabji','bhaji','sabzi','mandi','greengrocer','fresh produce','fruits','veggie','subzi'] },
-  { cat: 'Mobile Bills',  keywords: ['airtel','jio','vi-','vodafone','idea cellular','bsnl','mobile bill','recharge','postpaid','prepaid','tata docomo','telecom','dtelecom','mtnl','cellphone','sim','broadband','internet bill','fiber','wifi bill'] },
-  { cat: 'Sheetal',       keywords: ['sheetal'] },
-  { cat: 'Jitendra',      keywords: ['jitendra','jitu'] },
-  { cat: 'Nishi',         keywords: ['nishi','nishad'] },
+  { cat: 'Transport',              keywords: ['metro','mumbai metro','bus','railway','irctc','uber','ola','rapido','auto','cab','petrol','fuel','pump','fastag','toll','parking','train','ticket','transit','bmtc','dmrc','nmmt','best bus'] },
+  { cat: 'Medical & Chemist',      keywords: ['pharmacy','chemist','medical','hospital','clinic','health','medicine','apollo','medplus','netmeds','1mg','wellness','diagnostic','lab','nursing','dispensary','pharma','vega chemist','siddhi','lifeline','rupee health'] },
+  { cat: 'Grocery & General Store',keywords: ['grocery','supermarket','dmart','d-mart','bigbasket','blinkit','zepto','jiomart','grofers','reliance fresh','kirana','general store','provision','spar','nature basket','instamart','swiggy instamart','more retail','spencers','nilgiris','easyday','daily needs','big bazaar'] },
+  { cat: 'Gold & Investments',     keywords: ['safe gold','digital gold','gold','sovereign','mutual fund','sip','zerodha','groww','coin','icicidirect','hdfcsec','nse','bse','sensex','nifty','investment','fd','fixed deposit','rd','recurring','ppf','nps','insurance','lic','hdfc life','icici pru','sbi life','bajaj allianz','star health'] },
+  { cat: 'Online Shopping',        keywords: ['ekart','amazon','flipkart','myntra','ajio','nykaa','meesho','snapdeal','tata cliq','shopsy','delivery','courier','shiprocket','delhivery','bluedart','dtdc'] },
+  { cat: 'Rent',                   keywords: ['rent','housing','flat','pg','lodge','landlord','house rent','niwas','awas','society','maintenance'] },
+  { cat: 'Light Bill',             keywords: ['electricity','mseb','bescom','light bill','torrent power','bijli','electric','mahadiscom','mahavitaran','adani electric','bses','tata power','cesc','uppcl'] },
+  { cat: 'Gas',                    keywords: ['gas','lpg','indane','hp gas','bharat gas','cylinder','igl','mgl','mahanagar gas','piped gas','png'] },
+  { cat: 'Mobile & Internet',      keywords: ['airtel','jio','vodafone','vi ','bsnl','mobile bill','recharge','postpaid','prepaid','broadband','internet','fiber','wifi','sim','tata sky','dish tv','d2h'] },
+  { cat: 'Food & Dining',          keywords: ['swiggy','zomato','restaurant','cafe','food','hotel','dining','dominos','mcdonalds','kfc','pizza','biryani','chaiwala','bakery','juice','canteen','mess','tiffin'] },
+  { cat: 'Personal Transfer',      keywords: ['dinesh','harishankar','rajesh','sangita','sahani','dharamraj','rushikesh','khara','shivshankar','yadav','suraksha','personal','family','friend','transfer to','sent to','neft','imps','rtgs'] },
+  { cat: 'Salary & Income',        keywords: ['salary','income','credit','stipend','bonus','incentive','commission','dividend','interest','refund','cashback','reversal','reward'] },
+  { cat: 'Other',                  keywords: [] },
 ];
 
 // Returns { cat, confidence: 'high'|'medium'|'low' }
@@ -1423,66 +1407,108 @@ function processImportFile(file) {
   }
 }
 
-//  Excel / CSV Parser 
+//  Excel / CSV Parser
+// Hardcoded for Axis Bank statement format:
+// Row 1: blank  |  Row 2: Tran Date, PARTICULARS, Credit, Debit  |  Row 3+: data
 function parseExcelCSV(file) {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array', cellDates: false });
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: true });
-      if (!rows.length) { showToast('File is empty', 'error'); return; }
 
-      const result = [];
-      const errors = [];
+      // Read as raw 2D array — safest for files with blank first rows
+      const allRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      console.log('File rows:', allRows.length, ' | First 3:', JSON.stringify(allRows.slice(0,3)));
 
-      rows.forEach((row, i) => {
-        const keys = Object.keys(row);
-        const get = (names) => {
-          const k = keys.find(k => names.some(n => k.toLowerCase().trim().includes(n.toLowerCase())));
-          return k ? String(row[k]).trim() : '';
-        };
-
-        const rawDate = get(['date','dt','dated','transaction date','txn date','value date']);
-        // For bank statements, look for debit/withdrawal columns first
-        const rawDebit  = get(['debit','withdrawal','dr','debit amt','withdrawal amt','debit amount']);
-        const rawCredit = get(['credit','deposit','cr','credit amt','deposit amt','credit amount']);
-        const rawAmt    = get(['amount','amt','price','cost','expense','₹','rs','inr']);
-        const rawDesc   = get(['description','narration','particulars','details','remarks','note','reference','desc','transaction details']);
-        const rawCat    = get(['category','cat','type','head']);
-
-        const date = parseDate(rawDate);
-        if (!date) { errors.push(i + 2); return; }
-
-        // For bank statements: only import debits (expenses)
-        let amt = 0;
-        if (rawDebit) {
-          amt = parseFloat(String(rawDebit).replace(/[₹,\s]/g, ''));
-        } else {
-          amt = parseFloat(String(rawAmt).replace(/[₹,\s]/g, ''));
+      // Step 1: Find the header row
+      // Your file: row 0 = blank, row 1 = ["Tran Date","PARTICULARS","Credit ","       Debit "]
+      let hdrIdx = -1;
+      for (let i = 0; i < Math.min(allRows.length, 10); i++) {
+        const joined = allRows[i].map(v => String(v).toLowerCase().trim()).join('|');
+        if (joined.includes('date') && (joined.includes('particular') || joined.includes('debit'))) {
+          hdrIdx = i;
+          break;
         }
-        if (isNaN(amt) || amt <= 0) { errors.push(i + 2); return; }
+      }
+      if (hdrIdx === -1) { showToast('Could not find header row (Tran Date / PARTICULARS)', 'error'); return; }
+      console.log('Header at row', hdrIdx, ':', allRows[hdrIdx]);
 
-        const description = rawDesc || rawCat || '';
-        let cat, confidence;
-        // If file has explicit category column that matches our list, use it
-        const exactCat = CATEGORIES.find(c => c.toLowerCase() === rawCat.toLowerCase());
-        if (exactCat) {
-          cat = exactCat; confidence = 'high';
-        } else {
-          ({ cat, confidence } = autoClassify(description));
-        }
-
-        result.push({ id: Date.now() + i, date, cat, confidence, amt, note: description });
+      // Step 2: Map column positions from header (trim all whitespace)
+      const hdr = allRows[hdrIdx].map(v => String(v).toLowerCase().replace(/\s+/g, ''));
+      let colDate = -1, colDesc = -1, colCredit = -1, colDebit = -1;
+      hdr.forEach((h, i) => {
+        if (h.includes('date'))                                     colDate   = i;
+        if (h.includes('particular') || h.includes('narr'))        colDesc   = i;
+        if (h.includes('credit') || h.includes('deposit'))         colCredit = i;
+        if (h.includes('debit') || h.includes('withdraw'))         colDebit  = i;
       });
 
-      if (errors.length) console.warn(`${errors.length} rows skipped (invalid date/amount)`);
-      if (!result.length) { showToast('No valid expense rows found', 'error'); return; }
+      // Fallback to positional defaults (col 0,1,2,3) if detection fails
+      if (colDate   < 0) colDate   = 0;
+      if (colDesc   < 0) colDesc   = 1;
+      if (colCredit < 0) colCredit = 2;
+      if (colDebit  < 0) colDebit  = 3;
+      console.log('Cols → date:', colDate, 'desc:', colDesc, 'credit:', colCredit, 'debit:', colDebit);
+
+      // Step 3: Parse data rows
+      const result = [], skipped = [];
+      const dataRows = allRows.slice(hdrIdx + 1);
+
+      dataRows.forEach((row, i) => {
+        const rawDate   = String(row[colDate]   ?? '').trim();
+        const rawDesc   = String(row[colDesc]   ?? '').trim();
+        const rawCredit = String(row[colCredit] ?? '').trim().replace(/[,\s₹]/g, '');
+        const rawDebit  = String(row[colDebit]  ?? '').trim().replace(/[,\s₹]/g, '');
+
+        // Skip blank rows
+        if (!rawDate && !rawDesc) return;
+
+        // Parse date — supports DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD
+        const date = parseDate(rawDate);
+        if (!date) { skipped.push(rawDate || '(blank)'); return; }
+
+        const creditAmt = parseFloat(rawCredit) || 0;
+        const debitAmt  = parseFloat(rawDebit)  || 0;
+
+        // Skip rows with no amount
+        if (creditAmt <= 0 && debitAmt <= 0) { skipped.push(rawDate + ' ' + rawDesc.slice(0,20)); return; }
+
+        const { cat, confidence } = autoClassify(rawDesc);
+
+        if (debitAmt > 0) {
+          result.push({
+            id: Date.now() + i * 2,
+            date, cat, confidence,
+            amt: debitAmt,
+            note: rawDesc,
+            type: 'debit',
+            bank: 'Axis Bank'
+          });
+        }
+        if (creditAmt > 0) {
+          result.push({
+            id: Date.now() + i * 2 + 1,
+            date, cat, confidence,
+            amt: creditAmt,
+            note: rawDesc,
+            type: 'credit',
+            bank: 'Axis Bank'
+          });
+        }
+      });
+
+      console.log('Parsed:', result.length, 'rows | Skipped:', skipped.length, skipped.slice(0,5));
+
+      if (!result.length) {
+        showToast('No transactions found. Check console for details.', 'error');
+        return;
+      }
 
       openReview(result);
+
     } catch(err) {
-      showToast('Could not read file', 'error');
+      showToast('Could not read file: ' + err.message, 'error');
       console.error(err);
     }
   };
