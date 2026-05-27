@@ -883,74 +883,62 @@ const USERS = [
 
 //  Auth helpers 
 function attemptLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const errEl = document.getElementById('loginError');
-  const btn = document.getElementById('loginBtn');
+  try {
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    const errEl = document.getElementById('loginError');
 
-  const match = USERS.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
-  if (!match) {
-    errEl.style.display = 'block';
-    document.getElementById('loginPass').value = '';
-    document.getElementById('loginPass').focus();
-    btn.disabled = false;
-    return;
+    const match = USERS.find(x => x.username.toLowerCase() === u.toLowerCase() && x.password === p);
+    if (!match) {
+      errEl.style.display = 'block';
+      document.getElementById('loginPass').value = '';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    sessionStorage.setItem('fd_user', match.username);
+    showDashboard(match.username);
+  } catch(e) {
+    alert('Login error: ' + e.message);
   }
-
-  errEl.style.display = 'none';
-  sessionStorage.setItem('fd_user', match.username);
-  showDashboard(match.username);
 }
 
 function logout() {
   sessionStorage.removeItem('fd_user');
-  const dash = document.getElementById('dashboardRoot');
-  dash.style.display = 'none';
-  dash.classList.remove('active');
+  document.getElementById('dashboardRoot').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').style.display = 'none';
-  document.getElementById('loginUser').focus();
 }
 
 function showDashboard(username) {
   document.getElementById('loginScreen').style.display = 'none';
-  const dash = document.getElementById('dashboardRoot');
-  dash.style.display = 'flex';
-  dash.classList.add('active');
-  // Set avatar and name
+  document.getElementById('dashboardRoot').style.display = 'flex';
   document.getElementById('userAvatar').textContent = username.slice(0,2).toUpperCase();
   document.getElementById('userNameDisplay').textContent = username;
-  // Update topbar subtitle
   const sub = document.getElementById('topbarSub');
   if (sub) sub.textContent = 'Welcome back, ' + username;
   init();
 }
 
-// Check session on page load — allow keyboard Enter on login fields
-document.addEventListener('DOMContentLoaded', () => {
+// Check session on page load
+window.onload = function() {
   const saved = sessionStorage.getItem('fd_user');
   if (saved && USERS.find(x => x.username === saved)) {
     showDashboard(saved);
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
-    setTimeout(() => document.getElementById('loginUser').focus(), 100);
   }
-
-  // Enter key support on login inputs
-  ['loginUser','loginPass'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') attemptLogin();
-    });
-  });
-});
+  document.getElementById('loginUser').addEventListener('keydown', function(e) { if (e.key === 'Enter') attemptLogin(); });
+  document.getElementById('loginPass').addEventListener('keydown', function(e) { if (e.key === 'Enter') attemptLogin(); });
+};
 
 
 //  Paste your deployed Apps Script Web App URL below.
 //  See Code.gs for step-by-step deployment instructions.
 // 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ApSqJ1Nn6nV_FlF_-3pRKKdYyszZ254Ah24-vLGye3tkhccIRpP-rp1chHx6Hh2w/exec";
+const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 // 
 
 const CATEGORIES = [
@@ -1754,7 +1742,7 @@ async function executeClear() {
 async function clearMonth(year, month) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
     // localStorage mode
-    const key = \`expenses_\${year}_\${String(month+1).padStart(2,'0')}\`;
+    const key = `expenses_${year}_${String(month+1).padStart(2,'0')}`;
     localStorage.removeItem(key);
     return;
   }
