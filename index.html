@@ -1236,8 +1236,9 @@ async function apiFetch(params) {
 
 async function getExpenses() {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: fall back to localStorage so the UI is usable before setup
-    return JSON.parse(localStorage.getItem(`expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`) || '[]');
+    const raw = JSON.parse(localStorage.getItem(`expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`) || '[]');
+    // Ensure every row has a type field (old data may be missing it)
+    return raw.map(e => ({ ...e, type: e.type || 'debit', bank: e.bank || '' }));
   }
   const cacheKey = `${currentYear}_${String(currentMonth+1).padStart(2,'0')}`;
   if (_cache[cacheKey]) return _cache[cacheKey];
@@ -1250,7 +1251,14 @@ async function getExpenses() {
       month:  String(currentMonth+1).padStart(2,'0'),
     });
     if (data.error) { showToast('Sheet error: ' + data.error, 'error'); return []; }
-    _cache[cacheKey] = data.expenses || [];
+    // Ensure every row has a type field (old sheet data may be missing it)
+    const expenses = (data.expenses || []).map(e => ({
+      ...e,
+      type: e.type === 'credit' ? 'credit' : 'debit',
+      bank: e.bank || '',
+      amt:  parseFloat(e.amt) || 0,
+    }));
+    _cache[cacheKey] = expenses;
     return _cache[cacheKey];
   } catch(e) {
     showToast('Could not reach Google Sheet', 'error');
@@ -1267,10 +1275,9 @@ function invalidateCache() {
 
 async function saveExpenseToSheet(expense) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: localStorage
     const key = `expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`;
     const arr = JSON.parse(localStorage.getItem(key) || '[]');
-    arr.push(expense);
+    arr.push({ ...expense, type: expense.type || 'debit', bank: expense.bank || '' });
     arr.sort((a,b) => b.date.localeCompare(a.date));
     localStorage.setItem(key, JSON.stringify(arr));
     return;
@@ -1294,13 +1301,21 @@ async function deleteExpenseFromSheet(id) {
 
 async function bulkAddToSheet(expenses) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: localStorage grouped by month
     const grouped = {};
     expenses.forEach(r => {
       const [y, m] = r.date.split('-');
       const key = `expenses_${y}_${m}`;
       if (!grouped[key]) grouped[key] = JSON.parse(localStorage.getItem(key) || '[]');
-      grouped[key].push({ id: r.id, date: r.date, cat: r.cat, amt: r.amt, note: r.note });
+      // Include ALL fields including type and bank
+      grouped[key].push({
+        id:   r.id,
+        date: r.date,
+        cat:  r.cat  || 'Miscellaneous',
+        amt:  r.amt,
+        note: r.note || '',
+        type: r.type || 'debit',
+        bank: r.bank || '',
+      });
     });
     Object.entries(grouped).forEach(([k, arr]) => {
       arr.sort((a,b) => b.date.localeCompare(a.date));
@@ -1791,177 +1806,134 @@ async function parsePDF(file) {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    console.log('PDF pages:', pdf.numPages);
 
-    const allRows = []; // will hold { y, x, text } items per page
+    // ── Extract all text items grouped by page and Y position ──
+    const pageLines = []; // array of { y, x, text, page } groups
 
     for (let p = 1; p <= pdf.numPages; p++) {
-      const page  = await pdf.getPage(p);
+      const page    = await pdf.getPage(p);
       const content = await page.getTextContent();
 
-      // Group text items by Y position (same line = same Y within 3px)
-      const lineMap = {};
+      // Group by snapped Y (3px grid)
+      const yMap = {};
       content.items.forEach(item => {
-        const y = Math.round(item.transform[5] / 3) * 3; // snap to 3px grid
-        if (!lineMap[y]) lineMap[y] = [];
-        lineMap[y].push({ x: item.transform[4], text: item.str.trim() });
+        if (!item.str.trim()) return;
+        const y = Math.round(item.transform[5] / 3) * 3;
+        if (!yMap[y]) yMap[y] = [];
+        yMap[y].push({ x: item.transform[4], text: item.str.trim() });
       });
 
-      // Sort lines top-to-bottom (higher Y = higher on page in PDF coords)
-      Object.keys(lineMap)
-        .map(Number)
-        .sort((a, b) => b - a)
-        .forEach(y => {
-          const cells = lineMap[y].sort((a, b) => a.x - b.x);
-          allRows.push(cells);
-        });
+      // Sort lines top→bottom (higher Y = higher on page in PDF space)
+      Object.keys(yMap).sort((a,b) => b-a).forEach(y => {
+        const sorted = yMap[y].sort((a,b) => a.x - b.x);
+        pageLines.push({ y: +y, page: p, cells: sorted, joined: sorted.map(c => c.text).join(' ') });
+      });
     }
 
-    console.log('Total PDF lines extracted:', allRows.length);
-
-    // ── Find header row ──────────────────────────────────────
-    // Axis Bank PDF: Tran Date | Chq No | Particulars | Debit | Credit | Balance | Init. Br
-    let headerRowIdx = -1;
-    let colDateX = -1, colDescX = -1, colCreditX = -1, colDebitX = -1, colBalX = -1;
-
-    for (let i = 0; i < Math.min(allRows.length, 80); i++) {
-      const cells = allRows[i];
-      const texts = cells.map(c => c.text.toLowerCase().trim());
-      const joined = texts.join(' ');
-
-      // Axis Bank header row contains all three of these
-      if (joined.includes('tran') && joined.includes('debit') && joined.includes('credit')) {
-        headerRowIdx = i;
-        cells.forEach(cell => {
-          const t = cell.text.toLowerCase().trim();
-          if (t === 'tran date' || t === 'tran' || t === 'date')       colDateX   = cell.x;
-          if (t === 'particulars' || t === 'narration' || t === 'desc') colDescX   = cell.x;
-          if (t === 'credit')                                           colCreditX = cell.x;
-          if (t === 'debit')                                            colDebitX  = cell.x;
-          if (t === 'balance' || t === 'bal')                          colBalX    = cell.x;
-        });
-        // If "Tran Date" was split into two cells "Tran" + "Date", colDateX gets "Tran" x
-        // Check again for "date" cell
-        if (colDescX < 0) {
-          cells.forEach(cell => {
-            const t = cell.text.toLowerCase().trim();
-            if (t.includes('particular') || t.includes('narr'))        colDescX   = cell.x;
-          });
-        }
-        console.log('Axis Bank header at line', i, '| date:', colDateX, 'desc:', colDescX, 'debit:', colDebitX, 'credit:', colCreditX, 'bal:', colBalX);
+    // ── Find the header row ────────────────────────────────────
+    let hdrIdx = -1;
+    for (let i = 0; i < Math.min(pageLines.length, 80); i++) {
+      const j = pageLines[i].joined.toLowerCase();
+      if (j.includes('tran') && j.includes('particular') && j.includes('debit')) {
+        hdrIdx = i;
+        console.log('Header at line', i, ':', pageLines[i].joined.slice(0,80));
         break;
       }
     }
-
-    // If X-position mapping failed, use hardcoded Axis Bank PDF column positions
-    // Based on actual PDF: date~36, desc~108, debit~340, credit~395, balance~448
-    if (headerRowIdx === -1 || colDebitX < 0) {
-      console.warn('Using hardcoded Axis Bank column positions');
-      if (headerRowIdx === -1) {
-        // Find first row with a date pattern as data start
-        for (let i = 0; i < allRows.length; i++) {
-          const joined = allRows[i].map(c => c.text).join(' ');
-          if (/\d{2}-\d{2}-\d{4}/.test(joined)) { headerRowIdx = i - 1; break; }
-        }
-        if (headerRowIdx < 0) headerRowIdx = 10; // safe default
-      }
-      // Estimate columns from actual data rows
-      const sampleRows = allRows.slice(headerRowIdx + 1, headerRowIdx + 6);
-      const allX = sampleRows.flatMap(r => r.map(c => c.x)).sort((a,b)=>a-b);
-      console.log('Sample X positions:', allX.slice(0,10));
-    }
-
-    if (headerRowIdx === -1) {
-      showToast('Could not find transaction table in PDF', 'error');
+    if (hdrIdx < 0) {
+      // No table header found — try plain text fallback
+      const fallback = parseAxisBankText(pageLines.map(l => l.joined).join('\n'));
+      if (fallback.length) { openReview(fallback); return; }
+      showToast('Could not find transaction table in PDF.', 'error');
       return;
     }
 
-    // ── Parse data rows ───────────────────────────────────────
-    // For Axis Bank PDF, transactions often span 2-3 lines (description wraps)
-    // Strategy: collect consecutive lines that belong to one transaction
+    // ── Get X positions of Debit and Credit columns ────────────
+    let debitX = -1, creditX = -1, balX = -1;
+    pageLines[hdrIdx].cells.forEach(cell => {
+      const t = cell.text.toLowerCase().trim();
+      if (t === 'debit')   debitX  = cell.x;
+      if (t === 'credit')  creditX = cell.x;
+      if (t === 'balance') balX    = cell.x;
+    });
+    console.log('debitX:', debitX, 'creditX:', creditX, 'balX:', balX);
 
-    const TOLERANCE = 35;
-    const inCol = (cellX, colX) => colX >= 0 && Math.abs(cellX - colX) < TOLERANCE;
-    const dateRe = /^\d{1,2}-\d{2}-\d{4}$/;
-    const amtRe  = /^\d{1,3}(,\d{3})*(\.\d{2})?$/;
+    // ── Parse transactions ─────────────────────────────────────
+    // Key insight: each transaction row starts with a DD-MM-YYYY date cell
+    // Description may wrap across 2-3 lines; debit/credit/balance on the SAME line as date
+
+    const DATE_RE = /^\d{2}-\d{2}-\d{4}$/;
+    const AMT_RE  = /^\d{1,3}(,\d{3})*\.\d{2}$/;
+    const TOL     = 30;
+    const inCol   = (cx, col) => col >= 0 && Math.abs(cx - col) < TOL;
 
     const results = [];
-
-    // Group rows into transactions: a new transaction starts when we see a date cell
     let curDate = '', curDesc = [], curDebit = 0, curCredit = 0;
 
     const flush = () => {
-      if (!curDate || (curDebit <= 0 && curCredit <= 0)) { curDate=''; curDesc=[]; curDebit=0; curCredit=0; return; }
-      const desc = curDesc.join(' ').trim();
-      const { cat, confidence } = autoClassify(desc);
+      if (!curDate || (curDebit <= 0 && curCredit <= 0)) {
+        curDate = ''; curDesc = []; curDebit = 0; curCredit = 0;
+        return;
+      }
+      const note = curDesc.join(' ').replace(/\s{2,}/g,' ').trim();
+      const { cat, confidence } = autoClassify(note);
       const id = Date.now() + results.length * 2;
-      if (curDebit > 0)  results.push({ id: id,     date: curDate, cat, confidence, amt: curDebit,  note: desc, type: 'debit',  bank: 'Axis Bank' });
-      if (curCredit > 0) results.push({ id: id + 1, date: curDate, cat, confidence, amt: curCredit, note: desc, type: 'credit', bank: 'Axis Bank' });
-      curDate=''; curDesc=[]; curDebit=0; curCredit=0;
+      if (curDebit  > 0) results.push({ id: id,     date: curDate, cat, confidence, amt: curDebit,  note: note.slice(0,120), type: 'debit',  bank: 'Axis Bank' });
+      if (curCredit > 0) results.push({ id: id + 1, date: curDate, cat, confidence, amt: curCredit, note: note.slice(0,120), type: 'credit', bank: 'Axis Bank' });
+      curDate = ''; curDesc = []; curDebit = 0; curCredit = 0;
     };
 
-    for (let i = headerRowIdx + 1; i < allRows.length; i++) {
-      const row = allRows[i];
-      if (!row || !row.length) continue;
+    for (let i = hdrIdx + 1; i < pageLines.length; i++) {
+      const { cells, joined } = pageLines[i];
 
-      // Check if this row starts a new transaction (has a date cell at ~colDateX)
-      let rowDate = '';
-      let rowDebit = 0, rowCredit = 0;
-      const rowDescParts = [];
+      // Skip footer / summary lines
+      if (/opening balance|closing balance|transaction total|unless the|legends/i.test(joined)) continue;
 
-      row.forEach(cell => {
-        const t = cell.text.trim();
-        if (!t) return;
+      // Check if this line starts with a date
+      const dateCell = cells.find(c => DATE_RE.test(c.text));
 
-        // Date cell — left-most column, matches DD-MM-YYYY
-        if (dateRe.test(t) && (colDateX < 0 || cell.x < colDescX - TOLERANCE || inCol(cell.x, colDateX))) {
-          rowDate = t;
-          return;
-        }
+      if (dateCell) {
+        flush(); // save previous transaction
+        curDate = parseDate(dateCell.text);
 
-        // Amount cells — right side of page
-        if (amtRe.test(t.replace(/,/g,''))) {
-          const num = parseFloat(t.replace(/,/g,''));
-          if (num > 0) {
-            // Use X position to distinguish debit vs credit vs balance
-            if (colDebitX >= 0 && colCreditX >= 0) {
-              if (inCol(cell.x, colDebitX))        rowDebit  = num;
-              else if (inCol(cell.x, colCreditX))  rowCredit = num;
-              // Skip balance column
-            } else {
-              // Fallback: first amount = debit, second = credit
-              if (rowDebit === 0) rowDebit = num;
-              else rowCredit = num;
+        // Collect amounts and description from THIS line
+        cells.forEach(cell => {
+          const t = cell.text;
+          if (DATE_RE.test(t)) return; // skip date itself
+
+          if (AMT_RE.test(t.replace(/,/g,''))) {
+            const num = parseFloat(t.replace(/,/g,''));
+            if (num > 0) {
+              if      (inCol(cell.x, debitX))  curDebit  = num;
+              else if (inCol(cell.x, creditX)) curCredit = num;
+              // skip balance
             }
+          } else if (!inCol(cell.x, balX) && t.length > 1 && !/^\d+$/.test(t)) {
+            curDesc.push(t);
           }
-          return;
-        }
-
-        // Description cell — middle area, skip balance/init columns
-        if (colBalX > 0 && cell.x >= colBalX - TOLERANCE) return; // skip balance
-        if (cell.x > 60) rowDescParts.push(t); // skip leftmost margin text
-      });
-
-      if (rowDate) {
-        // New transaction starts — flush previous
-        flush();
-        curDate   = parseDate(rowDate) || '';
-        curDebit  = rowDebit;
-        curCredit = rowCredit;
-        curDesc   = rowDescParts;
+        });
       } else if (curDate) {
-        // Continuation of current transaction (wrapped description)
-        if (rowDebit > 0  && curDebit  === 0) curDebit  = rowDebit;
-        if (rowCredit > 0 && curCredit === 0) curCredit = rowCredit;
-        curDesc.push(...rowDescParts);
+        // Continuation line — may have more description or wrapped amounts
+        cells.forEach(cell => {
+          const t = cell.text;
+          if (AMT_RE.test(t.replace(/,/g,''))) {
+            const num = parseFloat(t.replace(/,/g,''));
+            if (num > 0) {
+              if      (inCol(cell.x, debitX)  && curDebit  === 0) curDebit  = num;
+              else if (inCol(cell.x, creditX) && curCredit === 0) curCredit = num;
+            }
+          } else if (!inCol(cell.x, balX) && t.length > 1 && !/^\d+$/.test(t)) {
+            curDesc.push(t);
+          }
+        });
       }
     }
-    flush(); // flush last transaction
+    flush(); // last transaction
 
-    console.log('Transactions extracted from PDF:', results.length);
+    console.log('Transactions extracted:', results.length);
 
     if (!results.length) {
-      showToast('No transactions found in PDF. Try the CSV export instead.', 'error');
+      showToast('No transactions found. Please use CSV export instead.', 'error');
       return;
     }
     openReview(results);
@@ -1972,27 +1944,13 @@ async function parsePDF(file) {
   }
 }
 
-function extractTransactionsFromText(text) {
-  const results = [];
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const dateRe = /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b/;
-  const amtRe  = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/g;
+// Fallback plain-text parser
+function parseAxisBankText(text) {
+  return [];
+}
 
-  lines.forEach((line, idx) => {
-    const dateMatch = line.match(dateRe);
-    if (!dateMatch) return;
-    const date = parseDate(dateMatch[1]);
-    if (!date) return;
-    let rest = line.replace(dateMatch[0], '').trim();
-    const nums = [...rest.matchAll(amtRe)].map(m => parseFloat(m[1].replace(/,/g, '')));
-    if (!nums.length) return;
-    let desc = rest.replace(amtRe, '').replace(/\s{2,}/g, ' ').trim();
-    const amt = nums.length >= 2 ? nums[nums.length - 2] : nums[0];
-    if (!amt || amt <= 0) return;
-    const { cat, confidence } = autoClassify(desc);
-    results.push({ id: Date.now() + idx, date, cat, confidence, amt, note: desc, type: 'debit', bank: 'Axis Bank' });
-  });
-  return results;
+function extractTransactionsFromText(text) {
+  return parseAxisBankText(text);
 }
 
 //  Review Modal 
