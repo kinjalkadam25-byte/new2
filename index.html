@@ -1128,56 +1128,57 @@ const CAT_GROUPS = {
 
 const CLASSIFY_RULES = [
   // Recurring Fixed
-  { cat: "Rent",              keywords: ["rent","landlord","house owner","paying guest","pg rent","niwas","society maintenance","maintenance charge"] },
+  { cat: "Rent",              keywords: ["house rent","rent paid","rent to","pg rent","paying guest","landlord","house owner","niwas","society maintenance","maintenance charge","housing society"] },
   { cat: "Electricity",       keywords: ["bescom","mseb","electricity","tata power","torrent power","adani electric","bses","mahadiscom","mahavitaran","bijli","wbsedcl","tneb","cesc","uppcl","discom","electric bill","power bill"] },
-  { cat: "Mobile Bill",       keywords: ["airtel","jio","vi ","vodafone","idea cellular","bsnl","mobile bill","recharge","postpaid","prepaid","mobile recharge","tata docomo","mtnl"] },
+  { cat: "Amazon / Flipkart", keywords: ["meesho technologies","meesho"] },
+  { cat: "Mobile Bill",       keywords: ["airtel","jio","vodafone","idea cellular","bsnl","mobile bill","recharge","postpaid","prepaid","mobile recharge","tata docomo","mtnl"] },
   { cat: "Internet",          keywords: ["broadband","wifi","fiber","act fibernet","hathway","internet bill","jio fiber","airtel fiber","excitel","you broadband"] },
-  { cat: "Insurance",         keywords: ["insurance","lic","policybazaar","mediclaim","term plan","hdfc life","icici pru","sbi life","bajaj allianz","star health","niva bupa","acko","policy","premium"] },
-  { cat: "Loan EMI",          keywords: ["emi","loan emi","home loan","car loan","personal loan","repayment","nach debit","ecs debit","auto debit emi","bajaj finance","hdfc loan","icici loan","sbi loan"] },
+  { cat: "Insurance",         keywords: ["insurance","lic","policybazaar","mediclaim","term plan","hdfc life","icici pru","sbi life","bajaj allianz","star health","niva bupa","acko","premium"] },
+  { cat: "Loan EMI",          keywords: ["loan emi","home loan","car loan","personal loan","repayment","nach debit","ecs debit","auto debit emi","bajaj finance"] },
 
   // Recurring Variable
-  { cat: "Groceries",         keywords: ["bigbasket","blinkit","zepto","dmart","d-mart","reliance fresh","jiomart","grocery","kirana","general store","instamart","swiggy instamart","more retail","spencers","nilgiris","nature basket","star bazaar","big bazaar","grofers","provision","daily needs"] },
-  { cat: "Fuel",              keywords: ["petrol","diesel","hpcl","bpcl","iocl","cng","pump","nayara","shell","fuel station","hp petrol","indian oil","bharat petroleum"] },
-  { cat: "Vegetables",        keywords: ["vegetable","sabji","mandi","farmer","sabzi","bhaji","fresh produce","veggie","subzi","green grocer"] },
-  { cat: "Milk",              keywords: ["milk","amul","mother dairy","dairy","milkbasket","milkman","dudh"] },
+  { cat: "Groceries",         keywords: ["bigbasket","blinkit","zepto","zeptonow","zepto marketplace","dmart","d-mart","reliance fresh","jiomart","grocery","kirana","instamart","swiggy instamart","more retail","spencers","nilgiris","nature basket","star bazaar","big bazaar","grofers","provision","daily needs","bbnow","surendera enterprise","rasila","sujata enterprise","gurukrupa"] },
+  { cat: "Fuel",              keywords: ["petrol","diesel","hpcl","bpcl","iocl","cng","pump","nayara","shell","fuel station","hp petrol","indian oil","bharat petroleum","suraksha auto"] },
+  { cat: "Vegetables",        keywords: ["vegetable","sabji","mandi","farmer","sabzi","bhaji","fresh produce","veggie","subzi","sabhapati","sabhajeet","rambali yadav","yamuna dairy"] },
+  { cat: "Milk",              keywords: ["milk","amul","mother dairy","milkbasket","milkman","dudh","dairy"] },
 
   // Food & Dining
-  { cat: "Swiggy / Zomato",   keywords: ["swiggy","zomato","foodpanda","eatsure","magicpin food","dunzo food"] },
-  { cat: "Restaurant",        keywords: ["restaurant","hotel food","dhaba","cafe","bistro","barbeque","dining","food court","canteen","mess","tiffin","biryani","pizza","burger","kfc","mcdonalds","dominos","subway","haldiram"] },
-  { cat: "Chai / Snacks",     keywords: ["chai","tea stall","kannu ki chai","haldiram snack","chaayos","chai point","tea","coffee","bakery","juice","starbucks","cafe coffee day","ccd"] },
+  { cat: "Swiggy / Zomato",   keywords: ["swiggy","zomato","foodpanda","eatsure","zomato limited"] },
+  { cat: "Restaurant",        keywords: ["restaurant","hotel food","dhaba","cafe","bistro","barbeque","dining","food court","canteen","mess","tiffin","biryani","pizza","burger","kfc","mcdonalds","dominos","subway","haldiram","royal cake","bajarang sweet","national restaurant","zaika shawarma","bonkers corner","seema enterprise"] },
+  { cat: "Chai / Snacks",     keywords: ["chai","tea stall","kannu ki chai","chaayos","chai point","starbucks","cafe coffee day","ccd","bakery","juice","snack"] },
 
   // Shopping
-  { cat: "Amazon / Flipkart", keywords: ["amazon","flipkart","meesho","snapdeal","shopsy","ekart","delivery","courier","myntra flipkart","ajio flipkart"] },
-  { cat: "Clothing",          keywords: ["myntra","ajio","westside","pantaloons","max fashion","zara","h&m","levi","nike","adidas","puma","lifestyle","shoppers stop","reliance trends","clothing","apparel","fashion"] },
-  { cat: "Electronics",       keywords: ["croma","vijay sales","reliance digital","decathlon","samsung","apple","oneplus","mi store","boAt","noise","electronics","gadget","mobile phone","laptop","headphone"] },
+  { cat: "Amazon / Flipkart", keywords: ["amazon","flipkart","shopsy","amazon pay","xpressbees","shadowfax","bigshorttails","ekart"] },
+  { cat: "Clothing",          keywords: ["westside","myntra","ajio","pantaloons","max fashion","zara","h&m","levi","nike","adidas","puma","lifestyle","shoppers stop","reliance trends","clothing","apparel","fashion","kraus jeans","souled store","the souled"] },
+  { cat: "Electronics",       keywords: ["croma","vijay sales","reliance digital","decathlon","samsung","apple","oneplus","mi store","electronics","gadget","mobile phone","laptop","headphone","kanishka mobile"] },
 
   // Travel
-  { cat: "Travel - Local",    keywords: ["uber","ola","rapido","meru","cab","auto","metro","mumbai metro","bmtc","dmrc","nmmt","best bus","bus pass","fastag","toll","parking"] },
-  { cat: "Travel - Train / Bus", keywords: ["irctc","redbus","abhibus","train ticket","metro card","railway","bus ticket","train","ksrtc","msrtc","gsrtc","volvo bus","sleeper"] },
+  { cat: "Travel - Local",    keywords: ["uber","ola","rapido","meru","cab","auto","mumbai metro","maha mumbai metro","atpl weh metro","metro one","bmtc","dmrc","nmmt","best bus","bus pass","fastag","toll","parking","mumbai metropolitan"] },
+  { cat: "Travel - Train / Bus", keywords: ["irctc","redbus","abhibus","train ticket","metro card","railway","bus ticket","ksrtc","msrtc","gsrtc","volvo bus","indian railways uts","indian railways"] },
   { cat: "Travel - Flight",   keywords: ["flight","airline","indigo","spicejet","air india","vistara","goair","akasa","air asia","goibibo","makemytrip flight","cleartrip","airport"] },
 
   // Health & Medical
-  { cat: "Doctor",            keywords: ["tanmay","clinic","doctor","physician","consultation","apollo clinic","practo","hospital","nursing home","specialist"] },
-  { cat: "Pharmacy",          keywords: ["kailash","apollo pharmacy","medplus","pharmeasy","1mg","netmeds","chemist","medical store","pharmacy","medicine","drug","tablet","vega chemist","siddhi"] },
+  { cat: "Doctor",            keywords: ["clinic","doctor","physician","consultation","apollo clinic","practo","hospital","nursing home","specialist","tanmay","namah"] },
+  { cat: "Pharmacy",          keywords: ["vega chemist","apollo pharmacy","medplus","pharmeasy","1mg","netmeds","chemist","medical store","pharmacy","medicine","drug","royal chemist","siddhi services"] },
   { cat: "Diagnostics",       keywords: ["thyrocare","lal pathlabs","healthians","diagnostic","pathology","lab test","blood test","thyroid","scan","xray","mri","radiology"] },
 
   // Entertainment
-  { cat: "OTT / Streaming",   keywords: ["netflix","spotify","hotstar","jiocinema","zee5","youtube premium","amazon prime","disney","sonyliv","hungama","gaana","wynk","apple music","ott"] },
-  { cat: "Movies / Events",   keywords: ["bookmyshow","pvr","inox","cinepolis","movie ticket","concert","event ticket","BookMyShow","multiplex"] },
+  { cat: "OTT / Streaming",   keywords: ["netflix","spotify","hotstar","jiocinema","zee5","youtube premium","amazon prime","disney","sonyliv","hungama","gaana","wynk","apple music","ott","vendiman"] },
+  { cat: "Movies / Events",   keywords: ["bookmyshow","pvr","inox","cinepolis","movie ticket","concert","event ticket","multiplex","mystery rooms","rush indoor"] },
 
   // Education
   { cat: "Coaching / Tuition",keywords: ["coaching","tuition","school fee","college fee","institute","fees","admission","tutorial","classes"] },
   { cat: "Online Courses",    keywords: ["udemy","coursera","skillshare","unacademy","byju","vedantu","upgrad","simplilearn","online course","learning"] },
 
   // Investments / Savings
-  { cat: "Mutual Fund / SIP", keywords: ["mutual fund","sip","zerodha","groww","kuvera","paytm money","navi","coin","icicidirect","hdfc sec","axis direct","kotak securities","nse","bse","investment","folio"] },
-  { cat: "FD / RD",           keywords: ["fixed deposit","fd","recurring deposit","rd","fd interest","sweep in","term deposit"] },
+  { cat: "Mutual Fund / SIP", keywords: ["safe gold","safe gold/yes","subscrip","mutual fund","sip","zerodha","groww","kuvera","paytm money","navi","coin","icicidirect","nse","bse","investment","folio","ach-dr-prudent","cams","prudent","axis nifty","axis strategic","axis money mark","axis multicap","axis balanced","axis mutual","d-uti","p-uti","mmdd","nsgp","mtgp","degp","ifgp"] },
+  { cat: "FD / RD",           keywords: ["fixed deposit","recurring deposit","fd interest","sweep in","term deposit","sb:925","int.pd","autosweep","rev sweep"] },
 
   // Internal Transfers
-  { cat: "Internal Transfers",keywords: ["transfer to","imps","neft","rtgs","self transfer","own account","internal transfer","fund transfer"] },
+  { cat: "Internal Transfers",keywords: ["jitendra /utib","jitendra /utib/upi","mob/tpft","tpft","self transfer","own account","internal transfer","kadam j r","sheetaljitendra","jitendra"] },
 
   // Personal Care
-  { cat: "Salon / Grooming",  keywords: ["salon","parlour","barber","grooming","spa","haircut","beauty","nail","waxing","threading"] },
+  { cat: "Salon / Grooming",  keywords: ["salon","parlour","barber","grooming","spa","haircut","beauty","nail","waxing","threading","naturals ghatcoper","naturals thakur","manushree beauty"] },
   { cat: "Gym / Fitness",     keywords: ["gym","fitness","cult fit","crossfit","yoga","health club","sports","swimming","zumba","workout","gold gym"] },
 
   // Miscellaneous — catch-all (always last)
@@ -1819,88 +1820,148 @@ async function parsePDF(file) {
     console.log('Total PDF lines extracted:', allRows.length);
 
     // ── Find header row ──────────────────────────────────────
-    // Look for a row containing "Tran" and "Particular" and "Debit"
+    // Axis Bank PDF: Tran Date | Chq No | Particulars | Debit | Credit | Balance | Init. Br
     let headerRowIdx = -1;
-    let colDateX = -1, colDescX = -1, colCreditX = -1, colDebitX = -1;
+    let colDateX = -1, colDescX = -1, colCreditX = -1, colDebitX = -1, colBalX = -1;
 
-    for (let i = 0; i < Math.min(allRows.length, 60); i++) {
-      const joined = allRows[i].map(c => c.text.toLowerCase()).join(' ');
-      if ((joined.includes('tran') || joined.includes('date')) &&
-          (joined.includes('particular') || joined.includes('narr') || joined.includes('desc')) &&
-          (joined.includes('debit') || joined.includes('withdrawal'))) {
+    for (let i = 0; i < Math.min(allRows.length, 80); i++) {
+      const cells = allRows[i];
+      const texts = cells.map(c => c.text.toLowerCase().trim());
+      const joined = texts.join(' ');
+
+      // Axis Bank header row contains all three of these
+      if (joined.includes('tran') && joined.includes('debit') && joined.includes('credit')) {
         headerRowIdx = i;
-        // Map X positions of each column header
-        allRows[i].forEach(cell => {
-          const t = cell.text.toLowerCase();
-          if (t.includes('date') || t.includes('tran'))                              colDateX   = cell.x;
-          if (t.includes('particular') || t.includes('narr') || t.includes('desc')) colDescX   = cell.x;
-          if (t.includes('credit') || t.includes('deposit'))                        colCreditX = cell.x;
-          if (t.includes('debit') || t.includes('withdraw'))                        colDebitX  = cell.x;
+        cells.forEach(cell => {
+          const t = cell.text.toLowerCase().trim();
+          if (t === 'tran date' || t === 'tran' || t === 'date')       colDateX   = cell.x;
+          if (t === 'particulars' || t === 'narration' || t === 'desc') colDescX   = cell.x;
+          if (t === 'credit')                                           colCreditX = cell.x;
+          if (t === 'debit')                                            colDebitX  = cell.x;
+          if (t === 'balance' || t === 'bal')                          colBalX    = cell.x;
         });
-        console.log('Header row found at line', i, '| date X:', colDateX, 'desc X:', colDescX, 'credit X:', colCreditX, 'debit X:', colDebitX);
+        // If "Tran Date" was split into two cells "Tran" + "Date", colDateX gets "Tran" x
+        // Check again for "date" cell
+        if (colDescX < 0) {
+          cells.forEach(cell => {
+            const t = cell.text.toLowerCase().trim();
+            if (t.includes('particular') || t.includes('narr'))        colDescX   = cell.x;
+          });
+        }
+        console.log('Axis Bank header at line', i, '| date:', colDateX, 'desc:', colDescX, 'debit:', colDebitX, 'credit:', colCreditX, 'bal:', colBalX);
         break;
       }
     }
 
+    // If X-position mapping failed, use hardcoded Axis Bank PDF column positions
+    // Based on actual PDF: date~36, desc~108, debit~340, credit~395, balance~448
+    if (headerRowIdx === -1 || colDebitX < 0) {
+      console.warn('Using hardcoded Axis Bank column positions');
+      if (headerRowIdx === -1) {
+        // Find first row with a date pattern as data start
+        for (let i = 0; i < allRows.length; i++) {
+          const joined = allRows[i].map(c => c.text).join(' ');
+          if (/\d{2}-\d{2}-\d{4}/.test(joined)) { headerRowIdx = i - 1; break; }
+        }
+        if (headerRowIdx < 0) headerRowIdx = 10; // safe default
+      }
+      // Estimate columns from actual data rows
+      const sampleRows = allRows.slice(headerRowIdx + 1, headerRowIdx + 6);
+      const allX = sampleRows.flatMap(r => r.map(c => c.x)).sort((a,b)=>a-b);
+      console.log('Sample X positions:', allX.slice(0,10));
+    }
+
     if (headerRowIdx === -1) {
-      // Fallback: try plain text extraction
-      console.warn('Header row not found — trying text fallback');
-      const fallback = extractTransactionsFromText(allRows.map(r => r.map(c=>c.text).join(' ')).join('\n'));
-      if (fallback.length) { openReview(fallback); return; }
       showToast('Could not find transaction table in PDF', 'error');
       return;
     }
 
-    // ── Parse data rows using X-position column mapping ──────
-    const TOLERANCE = 40; // px tolerance for column matching
+    // ── Parse data rows ───────────────────────────────────────
+    // For Axis Bank PDF, transactions often span 2-3 lines (description wraps)
+    // Strategy: collect consecutive lines that belong to one transaction
+
+    const TOLERANCE = 35;
     const inCol = (cellX, colX) => colX >= 0 && Math.abs(cellX - colX) < TOLERANCE;
+    const dateRe = /^\d{1,2}-\d{2}-\d{4}$/;
+    const amtRe  = /^\d{1,3}(,\d{3})*(\.\d{2})?$/;
 
     const results = [];
-    const dateRe = /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/;
+
+    // Group rows into transactions: a new transaction starts when we see a date cell
+    let curDate = '', curDesc = [], curDebit = 0, curCredit = 0;
+
+    const flush = () => {
+      if (!curDate || (curDebit <= 0 && curCredit <= 0)) { curDate=''; curDesc=[]; curDebit=0; curCredit=0; return; }
+      const desc = curDesc.join(' ').trim();
+      const { cat, confidence } = autoClassify(desc);
+      const id = Date.now() + results.length * 2;
+      if (curDebit > 0)  results.push({ id: id,     date: curDate, cat, confidence, amt: curDebit,  note: desc, type: 'debit',  bank: 'Axis Bank' });
+      if (curCredit > 0) results.push({ id: id + 1, date: curDate, cat, confidence, amt: curCredit, note: desc, type: 'credit', bank: 'Axis Bank' });
+      curDate=''; curDesc=[]; curDebit=0; curCredit=0;
+    };
 
     for (let i = headerRowIdx + 1; i < allRows.length; i++) {
       const row = allRows[i];
       if (!row || !row.length) continue;
 
-      // Collect cells into columns by X position
-      let rawDate = '', rawDesc = '', rawCredit = '', rawDebit = '';
-      const descParts = [];
+      // Check if this row starts a new transaction (has a date cell at ~colDateX)
+      let rowDate = '';
+      let rowDebit = 0, rowCredit = 0;
+      const rowDescParts = [];
 
       row.forEach(cell => {
-        if (inCol(cell.x, colDateX))   rawDate   = cell.text;
-        else if (inCol(cell.x, colCreditX)) rawCredit = cell.text;
-        else if (inCol(cell.x, colDebitX))  rawDebit  = cell.text;
-        else if (inCol(cell.x, colDescX) || (cell.x > colDescX - TOLERANCE && cell.x < (colCreditX > 0 ? colCreditX : colDebitX) - TOLERANCE)) {
-          descParts.push(cell.text);
+        const t = cell.text.trim();
+        if (!t) return;
+
+        // Date cell — left-most column, matches DD-MM-YYYY
+        if (dateRe.test(t) && (colDateX < 0 || cell.x < colDescX - TOLERANCE || inCol(cell.x, colDateX))) {
+          rowDate = t;
+          return;
         }
+
+        // Amount cells — right side of page
+        if (amtRe.test(t.replace(/,/g,''))) {
+          const num = parseFloat(t.replace(/,/g,''));
+          if (num > 0) {
+            // Use X position to distinguish debit vs credit vs balance
+            if (colDebitX >= 0 && colCreditX >= 0) {
+              if (inCol(cell.x, colDebitX))        rowDebit  = num;
+              else if (inCol(cell.x, colCreditX))  rowCredit = num;
+              // Skip balance column
+            } else {
+              // Fallback: first amount = debit, second = credit
+              if (rowDebit === 0) rowDebit = num;
+              else rowCredit = num;
+            }
+          }
+          return;
+        }
+
+        // Description cell — middle area, skip balance/init columns
+        if (colBalX > 0 && cell.x >= colBalX - TOLERANCE) return; // skip balance
+        if (cell.x > 60) rowDescParts.push(t); // skip leftmost margin text
       });
 
-      if (descParts.length) rawDesc = descParts.join(' ').trim();
-
-      // Skip rows with no date
-      if (!rawDate || !dateRe.test(rawDate)) continue;
-
-      const date = parseDate(rawDate);
-      if (!date) continue;
-
-      const creditVal = parseFloat(rawCredit.replace(/[,₹\s]/g, '')) || 0;
-      const debitVal  = parseFloat(rawDebit.replace(/[,₹\s]/g, ''))  || 0;
-      if (creditVal <= 0 && debitVal <= 0) continue;
-
-      const { cat, confidence } = autoClassify(rawDesc);
-
-      if (debitVal > 0) {
-        results.push({ id: Date.now() + i * 2,     date, cat, confidence, amt: debitVal,  note: rawDesc, type: 'debit',  bank: 'Axis Bank' });
-      }
-      if (creditVal > 0) {
-        results.push({ id: Date.now() + i * 2 + 1, date, cat, confidence, amt: creditVal, note: rawDesc, type: 'credit', bank: 'Axis Bank' });
+      if (rowDate) {
+        // New transaction starts — flush previous
+        flush();
+        curDate   = parseDate(rowDate) || '';
+        curDebit  = rowDebit;
+        curCredit = rowCredit;
+        curDesc   = rowDescParts;
+      } else if (curDate) {
+        // Continuation of current transaction (wrapped description)
+        if (rowDebit > 0  && curDebit  === 0) curDebit  = rowDebit;
+        if (rowCredit > 0 && curCredit === 0) curCredit = rowCredit;
+        curDesc.push(...rowDescParts);
       }
     }
+    flush(); // flush last transaction
 
     console.log('Transactions extracted from PDF:', results.length);
 
     if (!results.length) {
-      showToast('No transactions found in PDF. Try uploading the CSV instead.', 'error');
+      showToast('No transactions found in PDF. Try the CSV export instead.', 'error');
       return;
     }
     openReview(results);
