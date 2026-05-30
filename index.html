@@ -639,6 +639,17 @@
     #dashboardRoot { display: none; }
     #dashboardRoot.active { display: flex; }
 
+    .cat-group-row { margin-bottom: 10px; }
+    .cat-subs { padding: 4px 0 0 0; }
+    .cat-sub-row {
+      display: flex; justify-content: space-between;
+      padding: 2px 0 2px 12px;
+      border-left: 2px solid var(--border);
+      margin-left: 4px; margin-bottom: 2px;
+    }
+    .cat-sub-name { font-size: 0.72rem; color: var(--muted); }
+    .cat-sub-amt  { font-size: 0.72rem; color: var(--text-2); font-weight: 600; font-family: 'DM Mono', monospace; }
+
     /*  Loading bar  */
     #loadingBar {
       position: fixed; top: 0; left: 0; height: 2px;
@@ -1045,27 +1056,133 @@ const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 // 
 
 const CATEGORIES = [
-  "Transport",
-  "Medical & Chemist",
-  "Grocery & General Store",
-  "Gold & Investments",
-  "Online Shopping",
-  "Rent",
-  "Light Bill",
-  "Gas",
-  "Mobile & Internet",
-  "Food & Dining",
-  "Personal Transfer",
-  "Salary & Income",
-  "Other"
+  // Recurring Fixed
+  "Rent", "Electricity", "Mobile Bill", "Internet", "Insurance", "Loan EMI",
+  // Recurring Variable
+  "Groceries", "Fuel", "Vegetables", "Milk",
+  // Food & Dining
+  "Swiggy / Zomato", "Restaurant", "Chai / Snacks",
+  // Shopping
+  "Amazon / Flipkart", "Clothing", "Electronics",
+  // Travel
+  "Travel - Local", "Travel - Train / Bus", "Travel - Flight",
+  // Health & Medical
+  "Doctor", "Pharmacy", "Diagnostics",
+  // Entertainment
+  "OTT / Streaming", "Movies / Events",
+  // Education
+  "Coaching / Tuition", "Online Courses",
+  // Investments / Savings
+  "Mutual Fund / SIP", "FD / RD",
+  // Internal Transfers
+  "Internal Transfers",
+  // Personal Care
+  "Salon / Grooming", "Gym / Fitness",
+  // Miscellaneous
+  "Miscellaneous"
 ];
 
+// Colour per category (matches Category Setup sheet)
 const CAT_COLORS = [
-  "#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6",
-  "#6366f1","#06b6d4","#f97316","#ec4899","#14b8a6",
-  "#84cc16","#10b981","#94a3b8"
+  // Recurring Fixed — cream #FFE8C8
+  "#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8",
+  // Recurring Variable — light green #E8F4FF
+  "#E8F4FF","#E8F4FF","#E8F4FF","#E8F4FF",
+  // Food & Dining — light yellow #E1F5EE
+  "#E1F5EE","#E1F5EE","#E1F5EE",
+  // Shopping — light purple #E6F1FB
+  "#E6F1FB","#E6F1FB","#E6F1FB",
+  // Travel — light teal #FAEEDA
+  "#FAEEDA","#FAEEDA","#FAEEDA",
+  // Health & Medical — light pink #FBEAF0
+  "#FBEAF0","#FBEAF0","#FBEAF0",
+  // Entertainment — light mint #EEEDFE
+  "#EEEDFE","#EEEDFE",
+  // Education — light sage #EAF3DE
+  "#EAF3DE","#EAF3DE",
+  // Investments — light green #E8F5E9
+  "#E8F5E9","#E8F5E9",
+  // Internal Transfers
+  "#E8F5G9",
+  // Personal Care — light peach #FFF0F5
+  "#FFF0F5","#FFF0F5",
+  // Miscellaneous
+  "#F3F4F6"
 ];
 
+// Parent category grouping for display
+const CAT_GROUPS = {
+  "Recurring Fixed":      ["Rent","Electricity","Mobile Bill","Internet","Insurance","Loan EMI"],
+  "Recurring Variable":   ["Groceries","Fuel","Vegetables","Milk"],
+  "Food & Dining":        ["Swiggy / Zomato","Restaurant","Chai / Snacks"],
+  "Shopping":             ["Amazon / Flipkart","Clothing","Electronics"],
+  "Travel":               ["Travel - Local","Travel - Train / Bus","Travel - Flight"],
+  "Health & Medical":     ["Doctor","Pharmacy","Diagnostics"],
+  "Entertainment":        ["OTT / Streaming","Movies / Events"],
+  "Education":            ["Coaching / Tuition","Online Courses"],
+  "Investments / Savings":["Mutual Fund / SIP","FD / RD"],
+  "Internal Transfers":   ["Internal Transfers"],
+  "Personal Care":        ["Salon / Grooming","Gym / Fitness"],
+  "Miscellaneous":        ["Miscellaneous"]
+};
+
+const CLASSIFY_RULES = [
+  // Recurring Fixed
+  { cat: "Rent",              keywords: ["rent","landlord","house owner","paying guest","pg rent","niwas","society maintenance","maintenance charge"] },
+  { cat: "Electricity",       keywords: ["bescom","mseb","electricity","tata power","torrent power","adani electric","bses","mahadiscom","mahavitaran","bijli","wbsedcl","tneb","cesc","uppcl","discom","electric bill","power bill"] },
+  { cat: "Mobile Bill",       keywords: ["airtel","jio","vi ","vodafone","idea cellular","bsnl","mobile bill","recharge","postpaid","prepaid","mobile recharge","tata docomo","mtnl"] },
+  { cat: "Internet",          keywords: ["broadband","wifi","fiber","act fibernet","hathway","internet bill","jio fiber","airtel fiber","excitel","you broadband"] },
+  { cat: "Insurance",         keywords: ["insurance","lic","policybazaar","mediclaim","term plan","hdfc life","icici pru","sbi life","bajaj allianz","star health","niva bupa","acko","policy","premium"] },
+  { cat: "Loan EMI",          keywords: ["emi","loan emi","home loan","car loan","personal loan","repayment","nach debit","ecs debit","auto debit emi","bajaj finance","hdfc loan","icici loan","sbi loan"] },
+
+  // Recurring Variable
+  { cat: "Groceries",         keywords: ["bigbasket","blinkit","zepto","dmart","d-mart","reliance fresh","jiomart","grocery","kirana","general store","instamart","swiggy instamart","more retail","spencers","nilgiris","nature basket","star bazaar","big bazaar","grofers","provision","daily needs"] },
+  { cat: "Fuel",              keywords: ["petrol","diesel","hpcl","bpcl","iocl","cng","pump","nayara","shell","fuel station","hp petrol","indian oil","bharat petroleum"] },
+  { cat: "Vegetables",        keywords: ["vegetable","sabji","mandi","farmer","sabzi","bhaji","fresh produce","veggie","subzi","green grocer"] },
+  { cat: "Milk",              keywords: ["milk","amul","mother dairy","dairy","milkbasket","milkman","dudh"] },
+
+  // Food & Dining
+  { cat: "Swiggy / Zomato",   keywords: ["swiggy","zomato","foodpanda","eatsure","magicpin food","dunzo food"] },
+  { cat: "Restaurant",        keywords: ["restaurant","hotel food","dhaba","cafe","bistro","barbeque","dining","food court","canteen","mess","tiffin","biryani","pizza","burger","kfc","mcdonalds","dominos","subway","haldiram"] },
+  { cat: "Chai / Snacks",     keywords: ["chai","tea stall","kannu ki chai","haldiram snack","chaayos","chai point","tea","coffee","bakery","juice","starbucks","cafe coffee day","ccd"] },
+
+  // Shopping
+  { cat: "Amazon / Flipkart", keywords: ["amazon","flipkart","meesho","snapdeal","shopsy","ekart","delivery","courier","myntra flipkart","ajio flipkart"] },
+  { cat: "Clothing",          keywords: ["myntra","ajio","westside","pantaloons","max fashion","zara","h&m","levi","nike","adidas","puma","lifestyle","shoppers stop","reliance trends","clothing","apparel","fashion"] },
+  { cat: "Electronics",       keywords: ["croma","vijay sales","reliance digital","decathlon","samsung","apple","oneplus","mi store","boAt","noise","electronics","gadget","mobile phone","laptop","headphone"] },
+
+  // Travel
+  { cat: "Travel - Local",    keywords: ["uber","ola","rapido","meru","cab","auto","metro","mumbai metro","bmtc","dmrc","nmmt","best bus","bus pass","fastag","toll","parking"] },
+  { cat: "Travel - Train / Bus", keywords: ["irctc","redbus","abhibus","train ticket","metro card","railway","bus ticket","train","ksrtc","msrtc","gsrtc","volvo bus","sleeper"] },
+  { cat: "Travel - Flight",   keywords: ["flight","airline","indigo","spicejet","air india","vistara","goair","akasa","air asia","goibibo","makemytrip flight","cleartrip","airport"] },
+
+  // Health & Medical
+  { cat: "Doctor",            keywords: ["tanmay","clinic","doctor","physician","consultation","apollo clinic","practo","hospital","nursing home","specialist"] },
+  { cat: "Pharmacy",          keywords: ["kailash","apollo pharmacy","medplus","pharmeasy","1mg","netmeds","chemist","medical store","pharmacy","medicine","drug","tablet","vega chemist","siddhi"] },
+  { cat: "Diagnostics",       keywords: ["thyrocare","lal pathlabs","healthians","diagnostic","pathology","lab test","blood test","thyroid","scan","xray","mri","radiology"] },
+
+  // Entertainment
+  { cat: "OTT / Streaming",   keywords: ["netflix","spotify","hotstar","jiocinema","zee5","youtube premium","amazon prime","disney","sonyliv","hungama","gaana","wynk","apple music","ott"] },
+  { cat: "Movies / Events",   keywords: ["bookmyshow","pvr","inox","cinepolis","movie ticket","concert","event ticket","BookMyShow","multiplex"] },
+
+  // Education
+  { cat: "Coaching / Tuition",keywords: ["coaching","tuition","school fee","college fee","institute","fees","admission","tutorial","classes"] },
+  { cat: "Online Courses",    keywords: ["udemy","coursera","skillshare","unacademy","byju","vedantu","upgrad","simplilearn","online course","learning"] },
+
+  // Investments / Savings
+  { cat: "Mutual Fund / SIP", keywords: ["mutual fund","sip","zerodha","groww","kuvera","paytm money","navi","coin","icicidirect","hdfc sec","axis direct","kotak securities","nse","bse","investment","folio"] },
+  { cat: "FD / RD",           keywords: ["fixed deposit","fd","recurring deposit","rd","fd interest","sweep in","term deposit"] },
+
+  // Internal Transfers
+  { cat: "Internal Transfers",keywords: ["transfer to","imps","neft","rtgs","self transfer","own account","internal transfer","fund transfer"] },
+
+  // Personal Care
+  { cat: "Salon / Grooming",  keywords: ["salon","parlour","barber","grooming","spa","haircut","beauty","nail","waxing","threading"] },
+  { cat: "Gym / Fitness",     keywords: ["gym","fitness","cult fit","crossfit","yoga","health club","sports","swimming","zumba","workout","gold gym"] },
+
+  // Miscellaneous — catch-all (always last)
+  { cat: "Miscellaneous",     keywords: [] }
+];
 const CAT_COLOR_MAP = {};
 CATEGORIES.forEach((c, i) => CAT_COLOR_MAP[c] = CAT_COLORS[i % CAT_COLORS.length]);
 
@@ -1231,14 +1348,15 @@ function autoFillCategory(text) {
 }
 
 function autoClassifyReturn(text) {
-  if (!text) return 'Other';
+  if (!text) return 'Miscellaneous';
   const lower = text.toLowerCase();
   for (const rule of CLASSIFY_RULES) {
+    if (!rule.keywords.length) continue;
     for (const kw of rule.keywords) {
-      if (lower.includes(kw)) return rule.cat;
+      if (lower.includes(kw.toLowerCase())) return rule.cat;
     }
   }
-  return 'Other';
+  return 'Miscellaneous';
 }
 
 async function addExpense() {
@@ -1337,37 +1455,64 @@ async function renderStats() {
 
 async function renderCategoryBreakdown() {
   const expenses = await getExpenses();
-  // Only show debit entries in category breakdown
   const debits = expenses.filter(e => e.type !== 'credit');
-  const total = debits.reduce((s,e) => s + e.amt, 0);
   const map = {};
   debits.forEach(e => {
-    const cat = e.cat || 'Other';
+    const cat = e.cat || 'Miscellaneous';
     map[cat] = (map[cat] || 0) + e.amt;
   });
 
-  const sorted = Object.entries(map)
-    .filter(([,amt]) => amt > 0)
-    .sort((a,b) => b[1] - a[1]);
-
-  if (!sorted.length) {
+  if (!Object.keys(map).length) {
     document.getElementById('catBreakdown').innerHTML = `<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.25;display:block;margin:0 auto 10px"><path d="M3 3h18v18H3z"/></svg>No expenses this month</div>`;
     return;
   }
 
-  const max = sorted[0][1];
-  // Generate colors for any category including ones not in predefined list
-  const colorPalette = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#6366f1','#06b6d4','#f97316','#ec4899','#14b8a6','#84cc16','#10b981','#94a3b8'];
-  document.getElementById('catBreakdown').innerHTML = sorted.map(([cat, amt], i) => {
-    const color = CAT_COLOR_MAP[cat] || colorPalette[i % colorPalette.length];
-    const pct = (amt / max * 100).toFixed(1);
+  // Group by parent category
+  const groupTotals = {};
+  Object.entries(CAT_GROUPS).forEach(([group, subs]) => {
+    const total = subs.reduce((s, sub) => s + (map[sub] || 0), 0);
+    if (total > 0) groupTotals[group] = { total, subs: subs.filter(s => map[s] > 0).map(s => ({ name: s, amt: map[s] })) };
+  });
+
+  // Add any uncategorised items under Miscellaneous
+  Object.keys(map).forEach(cat => {
+    const inGroup = Object.values(CAT_GROUPS).flat().includes(cat);
+    if (!inGroup) {
+      if (!groupTotals['Miscellaneous']) groupTotals['Miscellaneous'] = { total: 0, subs: [] };
+      groupTotals['Miscellaneous'].total += map[cat];
+      groupTotals['Miscellaneous'].subs.push({ name: cat, amt: map[cat] });
+    }
+  });
+
+  const sorted = Object.entries(groupTotals).sort((a,b) => b[1].total - a[1].total);
+  const max = sorted[0][1].total;
+
+  const groupColors = {
+    "Recurring Fixed": "#f59e0b", "Recurring Variable": "#22c55e",
+    "Food & Dining": "#10b981", "Shopping": "#8b5cf6",
+    "Travel": "#06b6d4", "Health & Medical": "#ef4444",
+    "Entertainment": "#6366f1", "Education": "#84cc16",
+    "Investments / Savings": "#3b82f6", "Internal Transfers": "#94a3b8",
+    "Personal Care": "#ec4899", "Miscellaneous": "#9ca3af"
+  };
+
+  document.getElementById('catBreakdown').innerHTML = sorted.map(([group, data]) => {
+    const color = groupColors[group] || '#94a3b8';
+    const pct   = (data.total / max * 100).toFixed(1);
+    const subHtml = data.subs.length > 1 ? data.subs
+      .sort((a,b) => b.amt - a.amt)
+      .map(s => `<div class="cat-sub-row"><span class="cat-sub-name">${s.name}</span><span class="cat-sub-amt">₹${fmt(s.amt)}</span></div>`)
+      .join('') : '';
     return `
-    <div class="cat-row">
-      <span class="cat-name" title="${cat}">${cat.length > 16 ? cat.slice(0,14)+'…' : cat}</span>
-      <div class="bar-wrap">
-        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+    <div class="cat-group-row">
+      <div class="cat-row">
+        <span class="cat-name" style="font-weight:700;color:var(--text)">${group}</span>
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <span class="cat-amt" style="font-weight:700">₹${fmt(data.total)}</span>
       </div>
-      <span class="cat-amt">₹${fmt(amt)}</span>
+      ${subHtml ? `<div class="cat-subs">${subHtml}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1454,35 +1599,19 @@ function showToast(msg, type) {
   setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-//  Auto-Classification Rules 
-const CLASSIFY_RULES = [
-  { cat: 'Transport',              keywords: ['metro','mumbai metro','bus','railway','irctc','uber','ola','rapido','auto','cab','petrol','fuel','pump','fastag','toll','parking','train','ticket','transit','bmtc','dmrc','nmmt','best bus'] },
-  { cat: 'Medical & Chemist',      keywords: ['pharmacy','chemist','medical','hospital','clinic','health','medicine','apollo','medplus','netmeds','1mg','wellness','diagnostic','lab','nursing','dispensary','pharma','vega chemist','siddhi','lifeline','rupee health'] },
-  { cat: 'Grocery & General Store',keywords: ['grocery','supermarket','dmart','d-mart','bigbasket','blinkit','zepto','jiomart','grofers','reliance fresh','kirana','general store','provision','spar','nature basket','instamart','swiggy instamart','more retail','spencers','nilgiris','easyday','daily needs','big bazaar'] },
-  { cat: 'Gold & Investments',     keywords: ['safe gold','digital gold','gold','sovereign','mutual fund','sip','zerodha','groww','coin','icicidirect','hdfcsec','nse','bse','sensex','nifty','investment','fd','fixed deposit','rd','recurring','ppf','nps','insurance','lic','hdfc life','icici pru','sbi life','bajaj allianz','star health'] },
-  { cat: 'Online Shopping',        keywords: ['ekart','amazon','flipkart','myntra','ajio','nykaa','meesho','snapdeal','tata cliq','shopsy','delivery','courier','shiprocket','delhivery','bluedart','dtdc'] },
-  { cat: 'Rent',                   keywords: ['rent','housing','flat','pg','lodge','landlord','house rent','niwas','awas','society','maintenance'] },
-  { cat: 'Light Bill',             keywords: ['electricity','mseb','bescom','light bill','torrent power','bijli','electric','mahadiscom','mahavitaran','adani electric','bses','tata power','cesc','uppcl'] },
-  { cat: 'Gas',                    keywords: ['gas','lpg','indane','hp gas','bharat gas','cylinder','igl','mgl','mahanagar gas','piped gas','png'] },
-  { cat: 'Mobile & Internet',      keywords: ['airtel','jio','vodafone','vi ','bsnl','mobile bill','recharge','postpaid','prepaid','broadband','internet','fiber','wifi','sim','tata sky','dish tv','d2h'] },
-  { cat: 'Food & Dining',          keywords: ['swiggy','zomato','restaurant','cafe','food','hotel','dining','dominos','mcdonalds','kfc','pizza','biryani','chaiwala','bakery','juice','canteen','mess','tiffin'] },
-  { cat: 'Personal Transfer',      keywords: ['dinesh','harishankar','rajesh','sangita','sahani','dharamraj','rushikesh','khara','shivshankar','yadav','suraksha','personal','family','friend','transfer to','sent to','neft','imps','rtgs'] },
-  { cat: 'Salary & Income',        keywords: ['salary','income','credit','stipend','bonus','incentive','commission','dividend','interest','refund','cashback','reversal','reward'] },
-  { cat: 'Other',                  keywords: [] },
-];
-
 // Returns { cat, confidence: 'high'|'medium'|'low' }
 function autoClassify(description) {
-  const desc = description.toLowerCase();
+  const desc = (description || '').toLowerCase();
   for (const rule of CLASSIFY_RULES) {
+    if (!rule.keywords.length) continue; // skip Miscellaneous catch-all
     for (const kw of rule.keywords) {
-      if (desc.includes(kw)) {
+      if (desc.includes(kw.toLowerCase())) {
         const confidence = kw.length >= 5 ? 'high' : 'medium';
         return { cat: rule.cat, confidence };
       }
     }
   }
-  return { cat: 'General Store', confidence: 'low' };
+  return { cat: 'Miscellaneous', confidence: 'low' };
 }
 
 //  Date Parsing 
