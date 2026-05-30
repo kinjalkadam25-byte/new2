@@ -235,6 +235,60 @@
       padding: 16px 12px;
       border-top: 1px solid rgba(255,255,255,0.06);
     }
+
+    .clear-data-btn {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; margin-bottom: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      background: transparent;
+      border: 1px solid rgba(220,38,38,0.3);
+      color: rgba(248,113,113,0.85);
+      font-size: 0.78rem; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .clear-data-btn:hover {
+      background: rgba(220,38,38,0.15);
+      color: #f87171;
+      border-color: rgba(220,38,38,0.6);
+    }
+
+    /* Clear modal stats row */
+    .clear-stat-box {
+      flex: 1; padding: 16px; text-align: center;
+      background: #fafafa;
+    }
+    .csb-value {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--text); letter-spacing: -0.5px;
+      margin-bottom: 3px;
+    }
+    .csb-label {
+      font-size: 0.68rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      font-weight: 600;
+    }
+
+    /* Clear options */
+    .clear-options { display: flex; flex-direction: column; gap: 8px; }
+    .clear-option {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px; border-radius: 8px;
+      border: 1.5px solid var(--border);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .clear-option:has(input:checked) {
+      border-color: #fca5a5; background: #fff9f9;
+    }
+    .clear-option input[type=radio] { accent-color: var(--red); flex-shrink: 0; }
+    .co-title { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .co-sub   { font-size: 0.74rem; color: var(--muted); }
+    .co-count {
+      margin-left: auto; font-size: 0.72rem; font-weight: 700;
+      background: #fee2e2; color: var(--red);
+      padding: 3px 8px; border-radius: 20px;
+      white-space: nowrap; flex-shrink: 0;
+    }
     .sidebar-user {
       display: flex; align-items: center; gap: 10px;
       padding: 10px;
@@ -821,36 +875,85 @@
 
 <!-- Clear Data Modal -->
 <div class="modal-backdrop" id="clearModal" style="display:none">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>Clear Data</h3>
+  <div class="modal" style="max-width:460px">
+
+    <div class="modal-header" style="border-bottom:2px solid #fee2e2;background:#fff9f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;background:#fee2e2;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--text)">Clear Data</div>
+          <div style="font-size:0.72rem;color:var(--muted)">This action cannot be undone</div>
+        </div>
+      </div>
       <button class="btn-ghost" onclick="closeClearModal()" style="padding:5px 12px;font-size:0.82rem">✕</button>
     </div>
-    <div style="padding:24px">
-      <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:20px;line-height:1.6">Choose what to clear. This cannot be undone.</p>
-      <div class="clear-options">
-        <label class="clear-option">
-          <input type="radio" name="clearScope" value="month" checked />
-          <div>
-            <div class="co-title">Current month only</div>
-            <div class="co-sub">Removes all transactions for <span id="clearMonthLabel"></span></div>
-          </div>
-        </label>
-        <label class="clear-option">
-          <input type="radio" name="clearScope" value="all" />
-          <div>
-            <div class="co-title">All data</div>
-            <div class="co-sub">Removes every transaction across all months</div>
-          </div>
-        </label>
+
+    <!-- Live stats summary -->
+    <div id="clearStats" style="display:flex;gap:0;border-bottom:1px solid var(--border)">
+      <div class="clear-stat-box" id="cStatMonth">
+        <div class="csb-value" id="cStatMonthCount">—</div>
+        <div class="csb-label" id="cStatMonthLabel">This month</div>
       </div>
-      <div style="margin-top:20px;padding:12px 14px;background:var(--red-lt);border:1px solid #fca5a5;border-radius:8px;font-size:0.8rem;color:var(--red)">
-        <strong>Warning:</strong> If Google Sheets is connected, this also deletes rows from your sheet. This action cannot be undone.
+      <div class="clear-stat-box" style="border-left:1px solid var(--border)" id="cStatAll">
+        <div class="csb-value" id="cStatAllCount">—</div>
+        <div class="csb-label">All months</div>
+      </div>
+      <div class="clear-stat-box" style="border-left:1px solid var(--border)">
+        <div class="csb-value" id="cStatDebit">—</div>
+        <div class="csb-label">Total debit</div>
       </div>
     </div>
+
+    <div style="padding:22px 24px">
+
+      <!-- Scope options -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">What to clear</div>
+      <div class="clear-options">
+        <label class="clear-option" id="clearOptMonth">
+          <input type="radio" name="clearScope" value="month" checked onchange="updateClearUI()" />
+          <div style="flex:1">
+            <div class="co-title">Current month</div>
+            <div class="co-sub" id="clearMonthLabel">Loading…</div>
+          </div>
+          <div class="co-count" id="clearMonthCount"></div>
+        </label>
+        <label class="clear-option" id="clearOptAll">
+          <input type="radio" name="clearScope" value="all" onchange="updateClearUI()" />
+          <div style="flex:1">
+            <div class="co-title">All data</div>
+            <div class="co-sub">Every transaction across all months</div>
+          </div>
+          <div class="co-count" id="clearAllCount"></div>
+        </label>
+      </div>
+
+      <!-- Confirmation input — shown only for "all" -->
+      <div id="clearConfirmBox" style="display:none;margin-top:16px">
+        <div style="font-size:0.78rem;color:var(--red);font-weight:600;margin-bottom:6px">
+          Type <strong>DELETE</strong> to confirm clearing all data
+        </div>
+        <input type="text" id="clearConfirmInput" placeholder="Type DELETE here"
+          oninput="updateClearBtn()"
+          style="border-color:#fca5a5;background:#fff9f9" />
+      </div>
+
+      <!-- Warning box -->
+      <div style="margin-top:16px;padding:11px 14px;background:#fff9f9;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#b91c1c;line-height:1.6">
+        <strong>Warning:</strong> Deleted transactions cannot be recovered.
+        If connected to Google Sheets, rows will also be removed from your sheet.
+      </div>
+
+    </div>
+
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeClearModal()">Cancel</button>
-      <button class="btn" style="background:var(--red);box-shadow:0 2px 8px rgba(220,38,38,0.3)" onclick="executeClear()">Clear Data</button>
+      <button class="btn" id="clearConfirmBtn"
+        style="background:var(--red);box-shadow:0 2px 8px rgba(220,38,38,0.25);min-width:130px"
+        onclick="executeClear()">
+        Clear Month
+      </button>
     </div>
   </div>
 </div>
@@ -1234,30 +1337,39 @@ async function renderStats() {
 
 async function renderCategoryBreakdown() {
   const expenses = await getExpenses();
-  const total = expenses.reduce((s,e)=>s+e.amt,0);
+  // Only show debit entries in category breakdown
+  const debits = expenses.filter(e => e.type !== 'credit');
+  const total = debits.reduce((s,e) => s + e.amt, 0);
   const map = {};
-  CATEGORIES.forEach(c => map[c] = 0);
-  expenses.forEach(e => map[e.cat] = (map[e.cat]||0) + e.amt);
+  debits.forEach(e => {
+    const cat = e.cat || 'Other';
+    map[cat] = (map[cat] || 0) + e.amt;
+  });
 
-  const sorted = CATEGORIES.map(c => ({ cat: c, amt: map[c] }))
-    .filter(x => x.amt > 0)
-    .sort((a,b) => b.amt - a.amt);
+  const sorted = Object.entries(map)
+    .filter(([,amt]) => amt > 0)
+    .sort((a,b) => b[1] - a[1]);
 
   if (!sorted.length) {
-    document.getElementById('catBreakdown').innerHTML = `<div class="empty"><div class="empty-icon" style="font-size:0;line-height:0"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;margin-bottom:10px"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/></svg></div>No expenses this month</div>`;
+    document.getElementById('catBreakdown').innerHTML = `<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.25;display:block;margin:0 auto 10px"><path d="M3 3h18v18H3z"/></svg>No expenses this month</div>`;
     return;
   }
 
-  const max = sorted[0].amt;
-  document.getElementById('catBreakdown').innerHTML = sorted.map(({ cat, amt }) => `
+  const max = sorted[0][1];
+  // Generate colors for any category including ones not in predefined list
+  const colorPalette = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#6366f1','#06b6d4','#f97316','#ec4899','#14b8a6','#84cc16','#10b981','#94a3b8'];
+  document.getElementById('catBreakdown').innerHTML = sorted.map(([cat, amt], i) => {
+    const color = CAT_COLOR_MAP[cat] || colorPalette[i % colorPalette.length];
+    const pct = (amt / max * 100).toFixed(1);
+    return `
     <div class="cat-row">
-      <span class="cat-name">${cat}</span>
+      <span class="cat-name" title="${cat}">${cat.length > 16 ? cat.slice(0,14)+'…' : cat}</span>
       <div class="bar-wrap">
-        <div class="bar-fill" style="width:${(amt/max*100).toFixed(1)}%;background:${CAT_COLOR_MAP[cat]}"></div>
+        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
       </div>
       <span class="cat-amt">₹${fmt(amt)}</span>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 async function renderTransactions() {
@@ -1543,38 +1655,129 @@ function parseExcelCSV(file) {
   reader.readAsArrayBuffer(file);
 }
 
-//  PDF Parser (bank statements) 
+//  PDF Parser — Axis Bank statement format
 async function parsePDF(file) {
   showToast('Reading PDF…');
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
+    console.log('PDF pages:', pdf.numPages);
+
+    const allRows = []; // will hold { y, x, text } items per page
 
     for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
+      const page  = await pdf.getPage(p);
       const content = await page.getTextContent();
-      // Reconstruct lines by grouping items with similar Y positions
-      const lines = {};
+
+      // Group text items by Y position (same line = same Y within 3px)
+      const lineMap = {};
       content.items.forEach(item => {
-        const y = Math.round(item.transform[5]);
-        if (!lines[y]) lines[y] = [];
-        lines[y].push({ x: item.transform[4], text: item.str });
+        const y = Math.round(item.transform[5] / 3) * 3; // snap to 3px grid
+        if (!lineMap[y]) lineMap[y] = [];
+        lineMap[y].push({ x: item.transform[4], text: item.str.trim() });
       });
-      Object.keys(lines).sort((a,b)=>b-a).forEach(y => {
-        const line = lines[y].sort((a,b)=>a.x-b.x).map(i=>i.text).join(' ');
-        fullText += line + '\n';
-      });
+
+      // Sort lines top-to-bottom (higher Y = higher on page in PDF coords)
+      Object.keys(lineMap)
+        .map(Number)
+        .sort((a, b) => b - a)
+        .forEach(y => {
+          const cells = lineMap[y].sort((a, b) => a.x - b.x);
+          allRows.push(cells);
+        });
     }
 
-    const transactions = extractTransactionsFromText(fullText);
-    if (!transactions.length) {
-      showToast('Could not parse transactions from PDF. Try Excel/CSV export.', 'error');
+    console.log('Total PDF lines extracted:', allRows.length);
+
+    // ── Find header row ──────────────────────────────────────
+    // Look for a row containing "Tran" and "Particular" and "Debit"
+    let headerRowIdx = -1;
+    let colDateX = -1, colDescX = -1, colCreditX = -1, colDebitX = -1;
+
+    for (let i = 0; i < Math.min(allRows.length, 60); i++) {
+      const joined = allRows[i].map(c => c.text.toLowerCase()).join(' ');
+      if ((joined.includes('tran') || joined.includes('date')) &&
+          (joined.includes('particular') || joined.includes('narr') || joined.includes('desc')) &&
+          (joined.includes('debit') || joined.includes('withdrawal'))) {
+        headerRowIdx = i;
+        // Map X positions of each column header
+        allRows[i].forEach(cell => {
+          const t = cell.text.toLowerCase();
+          if (t.includes('date') || t.includes('tran'))                              colDateX   = cell.x;
+          if (t.includes('particular') || t.includes('narr') || t.includes('desc')) colDescX   = cell.x;
+          if (t.includes('credit') || t.includes('deposit'))                        colCreditX = cell.x;
+          if (t.includes('debit') || t.includes('withdraw'))                        colDebitX  = cell.x;
+        });
+        console.log('Header row found at line', i, '| date X:', colDateX, 'desc X:', colDescX, 'credit X:', colCreditX, 'debit X:', colDebitX);
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) {
+      // Fallback: try plain text extraction
+      console.warn('Header row not found — trying text fallback');
+      const fallback = extractTransactionsFromText(allRows.map(r => r.map(c=>c.text).join(' ')).join('\n'));
+      if (fallback.length) { openReview(fallback); return; }
+      showToast('Could not find transaction table in PDF', 'error');
       return;
     }
-    openReview(transactions);
+
+    // ── Parse data rows using X-position column mapping ──────
+    const TOLERANCE = 40; // px tolerance for column matching
+    const inCol = (cellX, colX) => colX >= 0 && Math.abs(cellX - colX) < TOLERANCE;
+
+    const results = [];
+    const dateRe = /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/;
+
+    for (let i = headerRowIdx + 1; i < allRows.length; i++) {
+      const row = allRows[i];
+      if (!row || !row.length) continue;
+
+      // Collect cells into columns by X position
+      let rawDate = '', rawDesc = '', rawCredit = '', rawDebit = '';
+      const descParts = [];
+
+      row.forEach(cell => {
+        if (inCol(cell.x, colDateX))   rawDate   = cell.text;
+        else if (inCol(cell.x, colCreditX)) rawCredit = cell.text;
+        else if (inCol(cell.x, colDebitX))  rawDebit  = cell.text;
+        else if (inCol(cell.x, colDescX) || (cell.x > colDescX - TOLERANCE && cell.x < (colCreditX > 0 ? colCreditX : colDebitX) - TOLERANCE)) {
+          descParts.push(cell.text);
+        }
+      });
+
+      if (descParts.length) rawDesc = descParts.join(' ').trim();
+
+      // Skip rows with no date
+      if (!rawDate || !dateRe.test(rawDate)) continue;
+
+      const date = parseDate(rawDate);
+      if (!date) continue;
+
+      const creditVal = parseFloat(rawCredit.replace(/[,₹\s]/g, '')) || 0;
+      const debitVal  = parseFloat(rawDebit.replace(/[,₹\s]/g, ''))  || 0;
+      if (creditVal <= 0 && debitVal <= 0) continue;
+
+      const { cat, confidence } = autoClassify(rawDesc);
+
+      if (debitVal > 0) {
+        results.push({ id: Date.now() + i * 2,     date, cat, confidence, amt: debitVal,  note: rawDesc, type: 'debit',  bank: 'Axis Bank' });
+      }
+      if (creditVal > 0) {
+        results.push({ id: Date.now() + i * 2 + 1, date, cat, confidence, amt: creditVal, note: rawDesc, type: 'credit', bank: 'Axis Bank' });
+      }
+    }
+
+    console.log('Transactions extracted from PDF:', results.length);
+
+    if (!results.length) {
+      showToast('No transactions found in PDF. Try uploading the CSV instead.', 'error');
+      return;
+    }
+    openReview(results);
+
   } catch(err) {
-    showToast('PDF read failed. Try Excel/CSV instead.', 'error');
+    showToast('PDF read failed: ' + err.message, 'error');
     console.error(err);
   }
 }
@@ -1582,48 +1785,23 @@ async function parsePDF(file) {
 function extractTransactionsFromText(text) {
   const results = [];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-
-  // Pattern: date at start of line, then description, then amount(s)
-  // Covers SBI, HDFC, ICICI, Axis, Kotak, Canara, PNB, BOI formats
   const dateRe = /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b/;
   const amtRe  = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/g;
 
   lines.forEach((line, idx) => {
     const dateMatch = line.match(dateRe);
     if (!dateMatch) return;
-
     const date = parseDate(dateMatch[1]);
     if (!date) return;
-
-    // Remove the date from the line
     let rest = line.replace(dateMatch[0], '').trim();
-
-    // Find all numbers in the rest
     const nums = [...rest.matchAll(amtRe)].map(m => parseFloat(m[1].replace(/,/g, '')));
     if (!nums.length) return;
-
-    // Heuristic: in bank statements last 1-2 numbers are balance; debit is before that
-    // Try to detect debit: look for "Dr" or take second-to-last number if >0
-    const isDr = /\bdr\b|\bdebit\b|\bwithdraw/i.test(rest);
-    const isCr = /\bcr\b|\bcredit\b|\bdeposit/i.test(rest);
-    if (isCr && !isDr) return; // skip credits/income
-
-    // Clean up description: remove numbers and common noise words
-    let desc = rest
-      .replace(amtRe, '')
-      .replace(/\b(dr|cr|neft|upi|imps|rtgs|atm|pos|bal|balance|ref|no|transaction|transfer|chq|clg|ach|ecs|nach|inb|mob|net)\b/gi, ' ')
-      .replace(/[\/\-\|#*:]+/g, ' ')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-
-    // Use the biggest number that's not the balance (last number usually is balance)
+    let desc = rest.replace(amtRe, '').replace(/\s{2,}/g, ' ').trim();
     const amt = nums.length >= 2 ? nums[nums.length - 2] : nums[0];
     if (!amt || amt <= 0) return;
-
-    const { cat, confidence } = autoClassify(desc + ' ' + line);
-    results.push({ id: Date.now() + idx, date, cat, confidence, amt, note: desc });
+    const { cat, confidence } = autoClassify(desc);
+    results.push({ id: Date.now() + idx, date, cat, confidence, amt, note: desc, type: 'debit', bank: 'Axis Bank' });
   });
-
   return results;
 }
 
@@ -1704,11 +1882,71 @@ async function confirmImport() {
 function showImportPreview() {}  // kept for compatibility
 
 // ── Clear Data ────────────────────────────────────────────────
-function confirmClear() {
-  // Set the month label in modal
-  const el = document.getElementById('clearMonthLabel');
-  if (el) el.textContent = monthName(currentYear, currentMonth);
+async function confirmClear() {
   document.getElementById('clearModal').style.display = 'flex';
+  document.getElementById('clearConfirmInput') && (document.getElementById('clearConfirmInput').value = '');
+  document.querySelector('input[name="clearScope"][value="month"]').checked = true;
+  updateClearUI();
+
+  // Load live stats
+  try {
+    const all = await getAllExpensesAllMonths();
+    const monthExpenses = all.filter(e => {
+      const [y, m] = (e.date || '').split('-');
+      return parseInt(y) === currentYear && parseInt(m) === currentMonth + 1;
+    });
+    const totalDebit = all.filter(e => e.type !== 'credit').reduce((s,e) => s + e.amt, 0);
+
+    document.getElementById('cStatMonthCount').textContent = monthExpenses.length;
+    document.getElementById('cStatAllCount').textContent   = all.length;
+    document.getElementById('cStatDebit').textContent      = '₹' + fmt(totalDebit);
+    document.getElementById('clearMonthCount').textContent = monthExpenses.length + ' entries';
+    document.getElementById('clearAllCount').textContent   = all.length + ' entries';
+  } catch(e) {
+    // Stats unavailable — just show modal without counts
+  }
+
+  // Set month label
+  const el = document.getElementById('clearMonthLabel');
+  if (el) el.textContent = 'Transactions for ' + monthName(currentYear, currentMonth);
+}
+
+async function getAllExpensesAllMonths() {
+  // In localStorage mode, scan all expense keys
+  if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+    const all = [];
+    Object.keys(localStorage).filter(k => k.startsWith('expenses_')).forEach(k => {
+      try { all.push(...JSON.parse(localStorage.getItem(k))); } catch(e) {}
+    });
+    return all;
+  }
+  // For Google Sheets, just return current month (full scan not implemented)
+  return await getExpenses();
+}
+
+function updateClearUI() {
+  const scope = document.querySelector('input[name="clearScope"]:checked')?.value;
+  const confirmBox = document.getElementById('clearConfirmBox');
+  const btn = document.getElementById('clearConfirmBtn');
+  if (scope === 'all') {
+    confirmBox.style.display = 'block';
+    btn.textContent = 'Clear All Data';
+    btn.style.opacity = '0.5';
+    btn.disabled = true;
+  } else {
+    confirmBox.style.display = 'none';
+    btn.textContent = 'Clear Month';
+    btn.style.opacity = '1';
+    btn.disabled = false;
+  }
+}
+
+function updateClearBtn() {
+  const val = document.getElementById('clearConfirmInput').value.trim();
+  const btn = document.getElementById('clearConfirmBtn');
+  const valid = val === 'DELETE';
+  btn.disabled = !valid;
+  btn.style.opacity = valid ? '1' : '0.5';
 }
 
 function closeClearModal() {
@@ -1717,49 +1955,47 @@ function closeClearModal() {
 
 async function executeClear() {
   const scope = document.querySelector('input[name="clearScope"]:checked').value;
-  const btn = document.querySelector('#clearModal .btn');
+  if (scope === 'all') {
+    const val = document.getElementById('clearConfirmInput').value.trim();
+    if (val !== 'DELETE') { showToast('Type DELETE to confirm', 'error'); return; }
+  }
+
+  const btn = document.getElementById('clearConfirmBtn');
   btn.disabled = true; btn.textContent = 'Clearing…';
 
   try {
     if (scope === 'month') {
       await clearMonth(currentYear, currentMonth);
-      showToast('Transactions cleared for ' + monthName(currentYear, currentMonth));
+      showToast('Cleared ' + monthName(currentYear, currentMonth));
     } else {
       await clearAll();
       showToast('All data cleared');
     }
     closeClearModal();
-    // Invalidate all cache
     Object.keys(_cache).forEach(k => delete _cache[k]);
     await render();
   } catch(err) {
     showToast('Clear failed: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Clear Data';
+    btn.disabled = false;
+    btn.textContent = scope === 'all' ? 'Clear All Data' : 'Clear Month';
   }
 }
 
 async function clearMonth(year, month) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // localStorage mode
     const key = `expenses_${year}_${String(month+1).padStart(2,'0')}`;
     localStorage.removeItem(key);
     return;
   }
-  // Google Sheets mode — delete all rows for this month
   const data = await apiFetch({ action: 'clearMonth', year, month: String(month+1).padStart(2,'0') });
   if (data.error) throw new Error(data.error);
 }
 
 async function clearAll() {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // localStorage mode — remove all expense keys
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('expenses_'))
-      .forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('expenses_')).forEach(k => localStorage.removeItem(k));
     return;
   }
-  // Google Sheets mode — clear entire sheet
   const data = await apiFetch({ action: 'clearAll' });
   if (data.error) throw new Error(data.error);
 }
