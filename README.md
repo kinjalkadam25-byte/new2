@@ -252,6 +252,43 @@
       color: #f87171;
       border-color: rgba(220,38,38,0.6);
     }
+
+    /* Clear modal stats row */
+    .clear-stat-box {
+      flex: 1; padding: 16px; text-align: center;
+      background: #fafafa;
+    }
+    .csb-value {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--text); letter-spacing: -0.5px;
+      margin-bottom: 3px;
+    }
+    .csb-label {
+      font-size: 0.68rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      font-weight: 600;
+    }
+
+    /* Clear options */
+    .clear-options { display: flex; flex-direction: column; gap: 8px; }
+    .clear-option {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px; border-radius: 8px;
+      border: 1.5px solid var(--border);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .clear-option:has(input:checked) {
+      border-color: #fca5a5; background: #fff9f9;
+    }
+    .clear-option input[type=radio] { accent-color: var(--red); flex-shrink: 0; }
+    .co-title { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .co-sub   { font-size: 0.74rem; color: var(--muted); }
+    .co-count {
+      margin-left: auto; font-size: 0.72rem; font-weight: 700;
+      background: #fee2e2; color: var(--red);
+      padding: 3px 8px; border-radius: 20px;
+      white-space: nowrap; flex-shrink: 0;
+    }
     .sidebar-user {
       display: flex; align-items: center; gap: 10px;
       padding: 10px;
@@ -602,6 +639,17 @@
     #dashboardRoot { display: none; }
     #dashboardRoot.active { display: flex; }
 
+    .cat-group-row { margin-bottom: 10px; }
+    .cat-subs { padding: 4px 0 0 0; }
+    .cat-sub-row {
+      display: flex; justify-content: space-between;
+      padding: 2px 0 2px 12px;
+      border-left: 2px solid var(--border);
+      margin-left: 4px; margin-bottom: 2px;
+    }
+    .cat-sub-name { font-size: 0.72rem; color: var(--muted); }
+    .cat-sub-amt  { font-size: 0.72rem; color: var(--text-2); font-weight: 600; font-family: 'DM Mono', monospace; }
+
     /*  Loading bar  */
     #loadingBar {
       position: fixed; top: 0; left: 0; height: 2px;
@@ -838,36 +886,85 @@
 
 <!-- Clear Data Modal -->
 <div class="modal-backdrop" id="clearModal" style="display:none">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>Clear Data</h3>
+  <div class="modal" style="max-width:460px">
+
+    <div class="modal-header" style="border-bottom:2px solid #fee2e2;background:#fff9f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;background:#fee2e2;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:0.95rem;font-weight:700;color:var(--text)">Clear Data</div>
+          <div style="font-size:0.72rem;color:var(--muted)">This action cannot be undone</div>
+        </div>
+      </div>
       <button class="btn-ghost" onclick="closeClearModal()" style="padding:5px 12px;font-size:0.82rem">✕</button>
     </div>
-    <div style="padding:24px">
-      <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:20px;line-height:1.6">Choose what to clear. This cannot be undone.</p>
-      <div class="clear-options">
-        <label class="clear-option">
-          <input type="radio" name="clearScope" value="month" checked />
-          <div>
-            <div class="co-title">Current month only</div>
-            <div class="co-sub">Removes all transactions for <span id="clearMonthLabel"></span></div>
-          </div>
-        </label>
-        <label class="clear-option">
-          <input type="radio" name="clearScope" value="all" />
-          <div>
-            <div class="co-title">All data</div>
-            <div class="co-sub">Removes every transaction across all months</div>
-          </div>
-        </label>
+
+    <!-- Live stats summary -->
+    <div id="clearStats" style="display:flex;gap:0;border-bottom:1px solid var(--border)">
+      <div class="clear-stat-box" id="cStatMonth">
+        <div class="csb-value" id="cStatMonthCount">—</div>
+        <div class="csb-label" id="cStatMonthLabel">This month</div>
       </div>
-      <div style="margin-top:20px;padding:12px 14px;background:var(--red-lt);border:1px solid #fca5a5;border-radius:8px;font-size:0.8rem;color:var(--red)">
-        <strong>Warning:</strong> If Google Sheets is connected, this also deletes rows from your sheet. This action cannot be undone.
+      <div class="clear-stat-box" style="border-left:1px solid var(--border)" id="cStatAll">
+        <div class="csb-value" id="cStatAllCount">—</div>
+        <div class="csb-label">All months</div>
+      </div>
+      <div class="clear-stat-box" style="border-left:1px solid var(--border)">
+        <div class="csb-value" id="cStatDebit">—</div>
+        <div class="csb-label">Total debit</div>
       </div>
     </div>
+
+    <div style="padding:22px 24px">
+
+      <!-- Scope options -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">What to clear</div>
+      <div class="clear-options">
+        <label class="clear-option" id="clearOptMonth">
+          <input type="radio" name="clearScope" value="month" checked onchange="updateClearUI()" />
+          <div style="flex:1">
+            <div class="co-title">Current month</div>
+            <div class="co-sub" id="clearMonthLabel">Loading…</div>
+          </div>
+          <div class="co-count" id="clearMonthCount"></div>
+        </label>
+        <label class="clear-option" id="clearOptAll">
+          <input type="radio" name="clearScope" value="all" onchange="updateClearUI()" />
+          <div style="flex:1">
+            <div class="co-title">All data</div>
+            <div class="co-sub">Every transaction across all months</div>
+          </div>
+          <div class="co-count" id="clearAllCount"></div>
+        </label>
+      </div>
+
+      <!-- Confirmation input — shown only for "all" -->
+      <div id="clearConfirmBox" style="display:none;margin-top:16px">
+        <div style="font-size:0.78rem;color:var(--red);font-weight:600;margin-bottom:6px">
+          Type <strong>DELETE</strong> to confirm clearing all data
+        </div>
+        <input type="text" id="clearConfirmInput" placeholder="Type DELETE here"
+          oninput="updateClearBtn()"
+          style="border-color:#fca5a5;background:#fff9f9" />
+      </div>
+
+      <!-- Warning box -->
+      <div style="margin-top:16px;padding:11px 14px;background:#fff9f9;border:1px solid #fecaca;border-radius:8px;font-size:0.78rem;color:#b91c1c;line-height:1.6">
+        <strong>Warning:</strong> Deleted transactions cannot be recovered.
+        If connected to Google Sheets, rows will also be removed from your sheet.
+      </div>
+
+    </div>
+
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeClearModal()">Cancel</button>
-      <button class="btn" style="background:var(--red);box-shadow:0 2px 8px rgba(220,38,38,0.3)" onclick="executeClear()">Clear Data</button>
+      <button class="btn" id="clearConfirmBtn"
+        style="background:var(--red);box-shadow:0 2px 8px rgba(220,38,38,0.25);min-width:130px"
+        onclick="executeClear()">
+        Clear Month
+      </button>
     </div>
   </div>
 </div>
@@ -875,7 +972,38 @@
 <div class="toast" id="toast"></div>
 
 <!-- SheetJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- XLSX library with fallback -->
+<script>
+(function() {
+  function loadScript(src, onSuccess, onFail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onSuccess;
+    s.onerror = onFail;
+    document.head.appendChild(s);
+  }
+  // Try primary CDN, fallback to SheetJS CDN
+  loadScript(
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    function() { console.log('XLSX loaded from cdnjs'); },
+    function() {
+      console.warn('cdnjs XLSX failed, trying unpkg...');
+      loadScript(
+        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+        function() { console.log('XLSX loaded from unpkg'); },
+        function() {
+          console.warn('unpkg XLSX failed, trying jsdelivr...');
+          loadScript(
+            'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+            function() { console.log('XLSX loaded from jsdelivr'); },
+            function() { console.error('All XLSX CDNs failed. CSV import unavailable.'); }
+          );
+        }
+      );
+    }
+  );
+})();
+</script>
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -936,6 +1064,7 @@ function showDashboard(username) {
   document.getElementById('userNameDisplay').textContent = username;
   const sub = document.getElementById('topbarSub');
   if (sub) sub.textContent = 'Welcome back, ' + username;
+  setupDropZone();
   init();
 }
 
@@ -959,27 +1088,134 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ApSqJ1Nn6nV_
 // 
 
 const CATEGORIES = [
-  "Transport",
-  "Medical & Chemist",
-  "Grocery & General Store",
-  "Gold & Investments",
-  "Online Shopping",
-  "Rent",
-  "Light Bill",
-  "Gas",
-  "Mobile & Internet",
-  "Food & Dining",
-  "Personal Transfer",
-  "Salary & Income",
-  "Other"
+  // Recurring Fixed
+  "Rent", "Electricity", "Mobile Bill", "Internet", "Insurance", "Loan EMI",
+  // Recurring Variable
+  "Groceries", "Fuel", "Vegetables", "Milk",
+  // Food & Dining
+  "Swiggy / Zomato", "Restaurant", "Chai / Snacks",
+  // Shopping
+  "Amazon / Flipkart", "Clothing", "Electronics",
+  // Travel
+  "Travel - Local", "Travel - Train / Bus", "Travel - Flight",
+  // Health & Medical
+  "Doctor", "Pharmacy", "Diagnostics",
+  // Entertainment
+  "OTT / Streaming", "Movies / Events",
+  // Education
+  "Coaching / Tuition", "Online Courses",
+  // Investments / Savings
+  "Mutual Fund / SIP", "FD / RD",
+  // Internal Transfers
+  "Internal Transfers",
+  // Personal Care
+  "Salon / Grooming", "Gym / Fitness",
+  // Miscellaneous
+  "Miscellaneous"
 ];
 
+// Colour per category (matches Category Setup sheet)
 const CAT_COLORS = [
-  "#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6",
-  "#6366f1","#06b6d4","#f97316","#ec4899","#14b8a6",
-  "#84cc16","#10b981","#94a3b8"
+  // Recurring Fixed — cream #FFE8C8
+  "#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8","#FFE8C8",
+  // Recurring Variable — light green #E8F4FF
+  "#E8F4FF","#E8F4FF","#E8F4FF","#E8F4FF",
+  // Food & Dining — light yellow #E1F5EE
+  "#E1F5EE","#E1F5EE","#E1F5EE",
+  // Shopping — light purple #E6F1FB
+  "#E6F1FB","#E6F1FB","#E6F1FB",
+  // Travel — light teal #FAEEDA
+  "#FAEEDA","#FAEEDA","#FAEEDA",
+  // Health & Medical — light pink #FBEAF0
+  "#FBEAF0","#FBEAF0","#FBEAF0",
+  // Entertainment — light mint #EEEDFE
+  "#EEEDFE","#EEEDFE",
+  // Education — light sage #EAF3DE
+  "#EAF3DE","#EAF3DE",
+  // Investments — light green #E8F5E9
+  "#E8F5E9","#E8F5E9",
+  // Internal Transfers
+  "#E8F5G9",
+  // Personal Care — light peach #FFF0F5
+  "#FFF0F5","#FFF0F5",
+  // Miscellaneous
+  "#F3F4F6"
 ];
 
+// Parent category grouping for display
+const CAT_GROUPS = {
+  "Recurring Fixed":      ["Rent","Electricity","Mobile Bill","Internet","Insurance","Loan EMI"],
+  "Recurring Variable":   ["Groceries","Fuel","Vegetables","Milk"],
+  "Food & Dining":        ["Swiggy / Zomato","Restaurant","Chai / Snacks"],
+  "Shopping":             ["Amazon / Flipkart","Clothing","Electronics"],
+  "Travel":               ["Travel - Local","Travel - Train / Bus","Travel - Flight"],
+  "Health & Medical":     ["Doctor","Pharmacy","Diagnostics"],
+  "Entertainment":        ["OTT / Streaming","Movies / Events"],
+  "Education":            ["Coaching / Tuition","Online Courses"],
+  "Investments / Savings":["Mutual Fund / SIP","FD / RD"],
+  "Internal Transfers":   ["Internal Transfers"],
+  "Personal Care":        ["Salon / Grooming","Gym / Fitness"],
+  "Miscellaneous":        ["Miscellaneous"]
+};
+
+const CLASSIFY_RULES = [
+  // Recurring Fixed
+  { cat: "Rent",              keywords: ["house rent","rent paid","rent to","pg rent","paying guest","landlord","house owner","niwas","society maintenance","maintenance charge","housing society"] },
+  { cat: "Electricity",       keywords: ["bescom","mseb","electricity","tata power","torrent power","adani electric","bses","mahadiscom","mahavitaran","bijli","wbsedcl","tneb","cesc","uppcl","discom","electric bill","power bill"] },
+  { cat: "Amazon / Flipkart", keywords: ["meesho technologies","meesho"] },
+  { cat: "Mobile Bill",       keywords: ["airtel","jio","vodafone","idea cellular","bsnl","mobile bill","recharge","postpaid","prepaid","mobile recharge","tata docomo","mtnl"] },
+  { cat: "Internet",          keywords: ["broadband","wifi","fiber","act fibernet","hathway","internet bill","jio fiber","airtel fiber","excitel","you broadband"] },
+  { cat: "Insurance",         keywords: ["insurance","lic","policybazaar","mediclaim","term plan","hdfc life","icici pru","sbi life","bajaj allianz","star health","niva bupa","acko","premium"] },
+  { cat: "Loan EMI",          keywords: ["loan emi","home loan","car loan","personal loan","repayment","nach debit","ecs debit","auto debit emi","bajaj finance"] },
+
+  // Recurring Variable
+  { cat: "Groceries",         keywords: ["bigbasket","blinkit","zepto","zeptonow","zepto marketplace","dmart","d-mart","reliance fresh","jiomart","grocery","kirana","instamart","swiggy instamart","more retail","spencers","nilgiris","nature basket","star bazaar","big bazaar","grofers","provision","daily needs","bbnow","surendera enterprise","rasila","sujata enterprise","gurukrupa"] },
+  { cat: "Fuel",              keywords: ["petrol","diesel","hpcl","bpcl","iocl","cng","pump","nayara","shell","fuel station","hp petrol","indian oil","bharat petroleum","suraksha auto"] },
+  { cat: "Vegetables",        keywords: ["vegetable","sabji","mandi","farmer","sabzi","bhaji","fresh produce","veggie","subzi","sabhapati","sabhajeet","rambali yadav","yamuna dairy"] },
+  { cat: "Milk",              keywords: ["milk","amul","mother dairy","milkbasket","milkman","dudh","dairy"] },
+
+  // Food & Dining
+  { cat: "Swiggy / Zomato",   keywords: ["swiggy","zomato","foodpanda","eatsure","zomato limited"] },
+  { cat: "Restaurant",        keywords: ["restaurant","hotel food","dhaba","cafe","bistro","barbeque","dining","food court","canteen","mess","tiffin","biryani","pizza","burger","kfc","mcdonalds","dominos","subway","haldiram","royal cake","bajarang sweet","national restaurant","zaika shawarma","bonkers corner","seema enterprise"] },
+  { cat: "Chai / Snacks",     keywords: ["chai","tea stall","kannu ki chai","chaayos","chai point","starbucks","cafe coffee day","ccd","bakery","juice","snack"] },
+
+  // Shopping
+  { cat: "Amazon / Flipkart", keywords: ["amazon","flipkart","shopsy","amazon pay","xpressbees","shadowfax","bigshorttails","ekart"] },
+  { cat: "Clothing",          keywords: ["westside","myntra","ajio","pantaloons","max fashion","zara","h&m","levi","nike","adidas","puma","lifestyle","shoppers stop","reliance trends","clothing","apparel","fashion","kraus jeans","souled store","the souled"] },
+  { cat: "Electronics",       keywords: ["croma","vijay sales","reliance digital","decathlon","samsung","apple","oneplus","mi store","electronics","gadget","mobile phone","laptop","headphone","kanishka mobile"] },
+
+  // Travel
+  { cat: "Travel - Local",    keywords: ["uber","ola","rapido","meru","cab","auto","mumbai metro","maha mumbai metro","atpl weh metro","metro one","bmtc","dmrc","nmmt","best bus","bus pass","fastag","toll","parking","mumbai metropolitan"] },
+  { cat: "Travel - Train / Bus", keywords: ["irctc","redbus","abhibus","train ticket","metro card","railway","bus ticket","ksrtc","msrtc","gsrtc","volvo bus","indian railways uts","indian railways"] },
+  { cat: "Travel - Flight",   keywords: ["flight","airline","indigo","spicejet","air india","vistara","goair","akasa","air asia","goibibo","makemytrip flight","cleartrip","airport"] },
+
+  // Health & Medical
+  { cat: "Doctor",            keywords: ["clinic","doctor","physician","consultation","apollo clinic","practo","hospital","nursing home","specialist","tanmay","namah"] },
+  { cat: "Pharmacy",          keywords: ["vega chemist","apollo pharmacy","medplus","pharmeasy","1mg","netmeds","chemist","medical store","pharmacy","medicine","drug","royal chemist","siddhi services"] },
+  { cat: "Diagnostics",       keywords: ["thyrocare","lal pathlabs","healthians","diagnostic","pathology","lab test","blood test","thyroid","scan","xray","mri","radiology"] },
+
+  // Entertainment
+  { cat: "OTT / Streaming",   keywords: ["netflix","spotify","hotstar","jiocinema","zee5","youtube premium","amazon prime","disney","sonyliv","hungama","gaana","wynk","apple music","ott","vendiman"] },
+  { cat: "Movies / Events",   keywords: ["bookmyshow","pvr","inox","cinepolis","movie ticket","concert","event ticket","multiplex","mystery rooms","rush indoor"] },
+
+  // Education
+  { cat: "Coaching / Tuition",keywords: ["coaching","tuition","school fee","college fee","institute","fees","admission","tutorial","classes"] },
+  { cat: "Online Courses",    keywords: ["udemy","coursera","skillshare","unacademy","byju","vedantu","upgrad","simplilearn","online course","learning"] },
+
+  // Investments / Savings
+  { cat: "Mutual Fund / SIP", keywords: ["safe gold","safe gold/yes","subscrip","mutual fund","sip","zerodha","groww","kuvera","paytm money","navi","coin","icicidirect","nse","bse","investment","folio","ach-dr-prudent","cams","prudent","axis nifty","axis strategic","axis money mark","axis multicap","axis balanced","axis mutual","d-uti","p-uti","mmdd","nsgp","mtgp","degp","ifgp"] },
+  { cat: "FD / RD",           keywords: ["fixed deposit","recurring deposit","fd interest","sweep in","term deposit","sb:925","int.pd","autosweep","rev sweep"] },
+
+  // Internal Transfers
+  { cat: "Internal Transfers",keywords: ["jitendra /utib","jitendra /utib/upi","mob/tpft","tpft","self transfer","own account","internal transfer","kadam j r","sheetaljitendra","jitendra"] },
+
+  // Personal Care
+  { cat: "Salon / Grooming",  keywords: ["salon","parlour","barber","grooming","spa","haircut","beauty","nail","waxing","threading","naturals ghatcoper","naturals thakur","manushree beauty"] },
+  { cat: "Gym / Fitness",     keywords: ["gym","fitness","cult fit","crossfit","yoga","health club","sports","swimming","zumba","workout","gold gym"] },
+
+  // Miscellaneous — catch-all (always last)
+  { cat: "Miscellaneous",     keywords: [] }
+];
 const CAT_COLOR_MAP = {};
 CATEGORIES.forEach((c, i) => CAT_COLOR_MAP[c] = CAT_COLORS[i % CAT_COLORS.length]);
 
@@ -1032,8 +1268,9 @@ async function apiFetch(params) {
 
 async function getExpenses() {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: fall back to localStorage so the UI is usable before setup
-    return JSON.parse(localStorage.getItem(`expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`) || '[]');
+    const raw = JSON.parse(localStorage.getItem(`expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`) || '[]');
+    // Ensure every row has a type field (old data may be missing it)
+    return raw.map(e => ({ ...e, type: e.type || 'debit', bank: e.bank || '' }));
   }
   const cacheKey = `${currentYear}_${String(currentMonth+1).padStart(2,'0')}`;
   if (_cache[cacheKey]) return _cache[cacheKey];
@@ -1046,7 +1283,14 @@ async function getExpenses() {
       month:  String(currentMonth+1).padStart(2,'0'),
     });
     if (data.error) { showToast('Sheet error: ' + data.error, 'error'); return []; }
-    _cache[cacheKey] = data.expenses || [];
+    // Ensure every row has a type field (old sheet data may be missing it)
+    const expenses = (data.expenses || []).map(e => ({
+      ...e,
+      type: e.type === 'credit' ? 'credit' : 'debit',
+      bank: e.bank || '',
+      amt:  parseFloat(e.amt) || 0,
+    }));
+    _cache[cacheKey] = expenses;
     return _cache[cacheKey];
   } catch(e) {
     showToast('Could not reach Google Sheet', 'error');
@@ -1063,10 +1307,9 @@ function invalidateCache() {
 
 async function saveExpenseToSheet(expense) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: localStorage
     const key = `expenses_${currentYear}_${String(currentMonth+1).padStart(2,'0')}`;
     const arr = JSON.parse(localStorage.getItem(key) || '[]');
-    arr.push(expense);
+    arr.push({ ...expense, type: expense.type || 'debit', bank: expense.bank || '' });
     arr.sort((a,b) => b.date.localeCompare(a.date));
     localStorage.setItem(key, JSON.stringify(arr));
     return;
@@ -1090,13 +1333,21 @@ async function deleteExpenseFromSheet(id) {
 
 async function bulkAddToSheet(expenses) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // Demo mode: localStorage grouped by month
     const grouped = {};
     expenses.forEach(r => {
       const [y, m] = r.date.split('-');
       const key = `expenses_${y}_${m}`;
       if (!grouped[key]) grouped[key] = JSON.parse(localStorage.getItem(key) || '[]');
-      grouped[key].push({ id: r.id, date: r.date, cat: r.cat, amt: r.amt, note: r.note });
+      // Include ALL fields including type and bank
+      grouped[key].push({
+        id:   r.id,
+        date: r.date,
+        cat:  r.cat  || 'Miscellaneous',
+        amt:  r.amt,
+        note: r.note || '',
+        type: r.type || 'debit',
+        bank: r.bank || '',
+      });
     });
     Object.entries(grouped).forEach(([k, arr]) => {
       arr.sort((a,b) => b.date.localeCompare(a.date));
@@ -1145,14 +1396,15 @@ function autoFillCategory(text) {
 }
 
 function autoClassifyReturn(text) {
-  if (!text) return 'Other';
+  if (!text) return 'Miscellaneous';
   const lower = text.toLowerCase();
   for (const rule of CLASSIFY_RULES) {
+    if (!rule.keywords.length) continue;
     for (const kw of rule.keywords) {
-      if (lower.includes(kw)) return rule.cat;
+      if (lower.includes(kw.toLowerCase())) return rule.cat;
     }
   }
-  return 'Other';
+  return 'Miscellaneous';
 }
 
 async function addExpense() {
@@ -1251,37 +1503,64 @@ async function renderStats() {
 
 async function renderCategoryBreakdown() {
   const expenses = await getExpenses();
-  // Only show debit entries in category breakdown
   const debits = expenses.filter(e => e.type !== 'credit');
-  const total = debits.reduce((s,e) => s + e.amt, 0);
   const map = {};
   debits.forEach(e => {
-    const cat = e.cat || 'Other';
+    const cat = e.cat || 'Miscellaneous';
     map[cat] = (map[cat] || 0) + e.amt;
   });
 
-  const sorted = Object.entries(map)
-    .filter(([,amt]) => amt > 0)
-    .sort((a,b) => b[1] - a[1]);
-
-  if (!sorted.length) {
+  if (!Object.keys(map).length) {
     document.getElementById('catBreakdown').innerHTML = `<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.25;display:block;margin:0 auto 10px"><path d="M3 3h18v18H3z"/></svg>No expenses this month</div>`;
     return;
   }
 
-  const max = sorted[0][1];
-  // Generate colors for any category including ones not in predefined list
-  const colorPalette = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#6366f1','#06b6d4','#f97316','#ec4899','#14b8a6','#84cc16','#10b981','#94a3b8'];
-  document.getElementById('catBreakdown').innerHTML = sorted.map(([cat, amt], i) => {
-    const color = CAT_COLOR_MAP[cat] || colorPalette[i % colorPalette.length];
-    const pct = (amt / max * 100).toFixed(1);
+  // Group by parent category
+  const groupTotals = {};
+  Object.entries(CAT_GROUPS).forEach(([group, subs]) => {
+    const total = subs.reduce((s, sub) => s + (map[sub] || 0), 0);
+    if (total > 0) groupTotals[group] = { total, subs: subs.filter(s => map[s] > 0).map(s => ({ name: s, amt: map[s] })) };
+  });
+
+  // Add any uncategorised items under Miscellaneous
+  Object.keys(map).forEach(cat => {
+    const inGroup = Object.values(CAT_GROUPS).flat().includes(cat);
+    if (!inGroup) {
+      if (!groupTotals['Miscellaneous']) groupTotals['Miscellaneous'] = { total: 0, subs: [] };
+      groupTotals['Miscellaneous'].total += map[cat];
+      groupTotals['Miscellaneous'].subs.push({ name: cat, amt: map[cat] });
+    }
+  });
+
+  const sorted = Object.entries(groupTotals).sort((a,b) => b[1].total - a[1].total);
+  const max = sorted[0][1].total;
+
+  const groupColors = {
+    "Recurring Fixed": "#f59e0b", "Recurring Variable": "#22c55e",
+    "Food & Dining": "#10b981", "Shopping": "#8b5cf6",
+    "Travel": "#06b6d4", "Health & Medical": "#ef4444",
+    "Entertainment": "#6366f1", "Education": "#84cc16",
+    "Investments / Savings": "#3b82f6", "Internal Transfers": "#94a3b8",
+    "Personal Care": "#ec4899", "Miscellaneous": "#9ca3af"
+  };
+
+  document.getElementById('catBreakdown').innerHTML = sorted.map(([group, data]) => {
+    const color = groupColors[group] || '#94a3b8';
+    const pct   = (data.total / max * 100).toFixed(1);
+    const subHtml = data.subs.length > 1 ? data.subs
+      .sort((a,b) => b.amt - a.amt)
+      .map(s => `<div class="cat-sub-row"><span class="cat-sub-name">${s.name}</span><span class="cat-sub-amt">₹${fmt(s.amt)}</span></div>`)
+      .join('') : '';
     return `
-    <div class="cat-row">
-      <span class="cat-name" title="${cat}">${cat.length > 16 ? cat.slice(0,14)+'…' : cat}</span>
-      <div class="bar-wrap">
-        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+    <div class="cat-group-row">
+      <div class="cat-row">
+        <span class="cat-name" style="font-weight:700;color:var(--text)">${group}</span>
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <span class="cat-amt" style="font-weight:700">₹${fmt(data.total)}</span>
       </div>
-      <span class="cat-amt">₹${fmt(amt)}</span>
+      ${subHtml ? `<div class="cat-subs">${subHtml}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1368,35 +1647,19 @@ function showToast(msg, type) {
   setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-//  Auto-Classification Rules 
-const CLASSIFY_RULES = [
-  { cat: 'Transport',              keywords: ['metro','mumbai metro','bus','railway','irctc','uber','ola','rapido','auto','cab','petrol','fuel','pump','fastag','toll','parking','train','ticket','transit','bmtc','dmrc','nmmt','best bus'] },
-  { cat: 'Medical & Chemist',      keywords: ['pharmacy','chemist','medical','hospital','clinic','health','medicine','apollo','medplus','netmeds','1mg','wellness','diagnostic','lab','nursing','dispensary','pharma','vega chemist','siddhi','lifeline','rupee health'] },
-  { cat: 'Grocery & General Store',keywords: ['grocery','supermarket','dmart','d-mart','bigbasket','blinkit','zepto','jiomart','grofers','reliance fresh','kirana','general store','provision','spar','nature basket','instamart','swiggy instamart','more retail','spencers','nilgiris','easyday','daily needs','big bazaar'] },
-  { cat: 'Gold & Investments',     keywords: ['safe gold','digital gold','gold','sovereign','mutual fund','sip','zerodha','groww','coin','icicidirect','hdfcsec','nse','bse','sensex','nifty','investment','fd','fixed deposit','rd','recurring','ppf','nps','insurance','lic','hdfc life','icici pru','sbi life','bajaj allianz','star health'] },
-  { cat: 'Online Shopping',        keywords: ['ekart','amazon','flipkart','myntra','ajio','nykaa','meesho','snapdeal','tata cliq','shopsy','delivery','courier','shiprocket','delhivery','bluedart','dtdc'] },
-  { cat: 'Rent',                   keywords: ['rent','housing','flat','pg','lodge','landlord','house rent','niwas','awas','society','maintenance'] },
-  { cat: 'Light Bill',             keywords: ['electricity','mseb','bescom','light bill','torrent power','bijli','electric','mahadiscom','mahavitaran','adani electric','bses','tata power','cesc','uppcl'] },
-  { cat: 'Gas',                    keywords: ['gas','lpg','indane','hp gas','bharat gas','cylinder','igl','mgl','mahanagar gas','piped gas','png'] },
-  { cat: 'Mobile & Internet',      keywords: ['airtel','jio','vodafone','vi ','bsnl','mobile bill','recharge','postpaid','prepaid','broadband','internet','fiber','wifi','sim','tata sky','dish tv','d2h'] },
-  { cat: 'Food & Dining',          keywords: ['swiggy','zomato','restaurant','cafe','food','hotel','dining','dominos','mcdonalds','kfc','pizza','biryani','chaiwala','bakery','juice','canteen','mess','tiffin'] },
-  { cat: 'Personal Transfer',      keywords: ['dinesh','harishankar','rajesh','sangita','sahani','dharamraj','rushikesh','khara','shivshankar','yadav','suraksha','personal','family','friend','transfer to','sent to','neft','imps','rtgs'] },
-  { cat: 'Salary & Income',        keywords: ['salary','income','credit','stipend','bonus','incentive','commission','dividend','interest','refund','cashback','reversal','reward'] },
-  { cat: 'Other',                  keywords: [] },
-];
-
 // Returns { cat, confidence: 'high'|'medium'|'low' }
 function autoClassify(description) {
-  const desc = description.toLowerCase();
+  const desc = (description || '').toLowerCase();
   for (const rule of CLASSIFY_RULES) {
+    if (!rule.keywords.length) continue; // skip Miscellaneous catch-all
     for (const kw of rule.keywords) {
-      if (desc.includes(kw)) {
+      if (desc.includes(kw.toLowerCase())) {
         const confidence = kw.length >= 5 ? 'high' : 'medium';
         return { cat: rule.cat, confidence };
       }
     }
   }
-  return { cat: 'General Store', confidence: 'low' };
+  return { cat: 'Miscellaneous', confidence: 'low' };
 }
 
 //  Date Parsing 
@@ -1436,8 +1699,9 @@ function parseDate(rawDate) {
 //  Import Logic 
 let pendingImportRows = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+function setupDropZone() {
   const zone = document.getElementById('dropZone');
+  if (!zone) return;
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
   zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
   zone.addEventListener('drop', e => {
@@ -1446,18 +1710,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.dataTransfer.files[0];
     if (file) processImportFile(file);
   });
-});
+}
 
 function handleImport(input) {
-  if (input.files[0]) processImportFile(input.files[0]);
+  if (input.files && input.files[0]) {
+    processImportFile(input.files[0]);
+  }
 }
 
 function processImportFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (ext === 'pdf') {
-    parsePDF(file);
-  } else {
-    parseExcelCSV(file);
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    console.log('Importing file:', file.name, 'type:', ext, 'size:', file.size);
+
+    if (ext === 'pdf') {
+      if (typeof pdfjsLib === 'undefined') {
+        showToast('PDF library not loaded. Try CSV instead.', 'error'); return;
+      }
+      showToast('Reading PDF…');
+      parsePDF(file);
+    } else if (['xlsx','xls','csv'].includes(ext)) {
+      if (typeof XLSX === 'undefined') {
+        // Wait up to 3 seconds for XLSX to load then retry
+        showToast('Loading XLSX library…');
+        let attempts = 0;
+        const wait = setInterval(() => {
+          attempts++;
+          if (typeof XLSX !== 'undefined') {
+            clearInterval(wait);
+            showToast('Reading ' + file.name + '…');
+            parseExcelCSV(file);
+          } else if (attempts > 15) {
+            clearInterval(wait);
+            showToast('XLSX library failed to load. Check your internet connection.', 'error');
+          }
+        }, 200);
+        return;
+      }
+      showToast('Reading ' + file.name + '…');
+      parseExcelCSV(file);
+    } else {
+      showToast('Unsupported file type. Use .csv, .xlsx or .pdf', 'error');
+    }
+  } catch(err) {
+    showToast('Import error: ' + err.message, 'error');
+    console.error('Import error:', err);
   }
 }
 
@@ -1466,9 +1763,23 @@ function processImportFile(file) {
 // Row 1: blank  |  Row 2: Tran Date, PARTICULARS, Credit, Debit  |  Row 3+: data
 function parseExcelCSV(file) {
   const reader = new FileReader();
+
+  reader.onerror = function() {
+    showToast('Could not read file. Try again.', 'error');
+    console.error('FileReader error:', reader.error);
+  };
+
   reader.onload = function(e) {
     try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
+      let wb;
+      // For CSV files, try reading as text first for better compatibility
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(e.target.result));
+        wb = XLSX.read(text, { type: 'string' });
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
+      }
+
       const sheet = wb.Sheets[wb.SheetNames[0]];
 
       // Read as raw 2D array — safest for files with blank first rows
@@ -1569,88 +1880,157 @@ function parseExcelCSV(file) {
   reader.readAsArrayBuffer(file);
 }
 
-//  PDF Parser (bank statements) 
+//  PDF Parser — Axis Bank statement format
 async function parsePDF(file) {
   showToast('Reading PDF…');
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
+
+    // ── Extract all text items grouped by page and Y position ──
+    const pageLines = []; // array of { y, x, text, page } groups
 
     for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
+      const page    = await pdf.getPage(p);
       const content = await page.getTextContent();
-      // Reconstruct lines by grouping items with similar Y positions
-      const lines = {};
+
+      // Group by snapped Y (3px grid)
+      const yMap = {};
       content.items.forEach(item => {
-        const y = Math.round(item.transform[5]);
-        if (!lines[y]) lines[y] = [];
-        lines[y].push({ x: item.transform[4], text: item.str });
+        if (!item.str.trim()) return;
+        const y = Math.round(item.transform[5] / 3) * 3;
+        if (!yMap[y]) yMap[y] = [];
+        yMap[y].push({ x: item.transform[4], text: item.str.trim() });
       });
-      Object.keys(lines).sort((a,b)=>b-a).forEach(y => {
-        const line = lines[y].sort((a,b)=>a.x-b.x).map(i=>i.text).join(' ');
-        fullText += line + '\n';
+
+      // Sort lines top→bottom (higher Y = higher on page in PDF space)
+      Object.keys(yMap).sort((a,b) => b-a).forEach(y => {
+        const sorted = yMap[y].sort((a,b) => a.x - b.x);
+        pageLines.push({ y: +y, page: p, cells: sorted, joined: sorted.map(c => c.text).join(' ') });
       });
     }
 
-    const transactions = extractTransactionsFromText(fullText);
-    if (!transactions.length) {
-      showToast('Could not parse transactions from PDF. Try Excel/CSV export.', 'error');
+    // ── Find the header row ────────────────────────────────────
+    let hdrIdx = -1;
+    for (let i = 0; i < Math.min(pageLines.length, 80); i++) {
+      const j = pageLines[i].joined.toLowerCase();
+      if (j.includes('tran') && j.includes('particular') && j.includes('debit')) {
+        hdrIdx = i;
+        console.log('Header at line', i, ':', pageLines[i].joined.slice(0,80));
+        break;
+      }
+    }
+    if (hdrIdx < 0) {
+      // No table header found — try plain text fallback
+      const fallback = parseAxisBankText(pageLines.map(l => l.joined).join('\n'));
+      if (fallback.length) { openReview(fallback); return; }
+      showToast('Could not find transaction table in PDF.', 'error');
       return;
     }
-    openReview(transactions);
+
+    // ── Get X positions of Debit and Credit columns ────────────
+    let debitX = -1, creditX = -1, balX = -1;
+    pageLines[hdrIdx].cells.forEach(cell => {
+      const t = cell.text.toLowerCase().trim();
+      if (t === 'debit')   debitX  = cell.x;
+      if (t === 'credit')  creditX = cell.x;
+      if (t === 'balance') balX    = cell.x;
+    });
+    console.log('debitX:', debitX, 'creditX:', creditX, 'balX:', balX);
+
+    // ── Parse transactions ─────────────────────────────────────
+    // Key insight: each transaction row starts with a DD-MM-YYYY date cell
+    // Description may wrap across 2-3 lines; debit/credit/balance on the SAME line as date
+
+    const DATE_RE = /^\d{2}-\d{2}-\d{4}$/;
+    const AMT_RE  = /^\d{1,3}(,\d{3})*\.\d{2}$/;
+    const TOL     = 30;
+    const inCol   = (cx, col) => col >= 0 && Math.abs(cx - col) < TOL;
+
+    const results = [];
+    let curDate = '', curDesc = [], curDebit = 0, curCredit = 0;
+
+    const flush = () => {
+      if (!curDate || (curDebit <= 0 && curCredit <= 0)) {
+        curDate = ''; curDesc = []; curDebit = 0; curCredit = 0;
+        return;
+      }
+      const note = curDesc.join(' ').replace(/\s{2,}/g,' ').trim();
+      const { cat, confidence } = autoClassify(note);
+      const id = Date.now() + results.length * 2;
+      if (curDebit  > 0) results.push({ id: id,     date: curDate, cat, confidence, amt: curDebit,  note: note.slice(0,120), type: 'debit',  bank: 'Axis Bank' });
+      if (curCredit > 0) results.push({ id: id + 1, date: curDate, cat, confidence, amt: curCredit, note: note.slice(0,120), type: 'credit', bank: 'Axis Bank' });
+      curDate = ''; curDesc = []; curDebit = 0; curCredit = 0;
+    };
+
+    for (let i = hdrIdx + 1; i < pageLines.length; i++) {
+      const { cells, joined } = pageLines[i];
+
+      // Skip footer / summary lines
+      if (/opening balance|closing balance|transaction total|unless the|legends/i.test(joined)) continue;
+
+      // Check if this line starts with a date
+      const dateCell = cells.find(c => DATE_RE.test(c.text));
+
+      if (dateCell) {
+        flush(); // save previous transaction
+        curDate = parseDate(dateCell.text);
+
+        // Collect amounts and description from THIS line
+        cells.forEach(cell => {
+          const t = cell.text;
+          if (DATE_RE.test(t)) return; // skip date itself
+
+          if (AMT_RE.test(t.replace(/,/g,''))) {
+            const num = parseFloat(t.replace(/,/g,''));
+            if (num > 0) {
+              if      (inCol(cell.x, debitX))  curDebit  = num;
+              else if (inCol(cell.x, creditX)) curCredit = num;
+              // skip balance
+            }
+          } else if (!inCol(cell.x, balX) && t.length > 1 && !/^\d+$/.test(t)) {
+            curDesc.push(t);
+          }
+        });
+      } else if (curDate) {
+        // Continuation line — may have more description or wrapped amounts
+        cells.forEach(cell => {
+          const t = cell.text;
+          if (AMT_RE.test(t.replace(/,/g,''))) {
+            const num = parseFloat(t.replace(/,/g,''));
+            if (num > 0) {
+              if      (inCol(cell.x, debitX)  && curDebit  === 0) curDebit  = num;
+              else if (inCol(cell.x, creditX) && curCredit === 0) curCredit = num;
+            }
+          } else if (!inCol(cell.x, balX) && t.length > 1 && !/^\d+$/.test(t)) {
+            curDesc.push(t);
+          }
+        });
+      }
+    }
+    flush(); // last transaction
+
+    console.log('Transactions extracted:', results.length);
+
+    if (!results.length) {
+      showToast('No transactions found. Please use CSV export instead.', 'error');
+      return;
+    }
+    openReview(results);
+
   } catch(err) {
-    showToast('PDF read failed. Try Excel/CSV instead.', 'error');
+    showToast('PDF read failed: ' + err.message, 'error');
     console.error(err);
   }
 }
 
+// Fallback plain-text parser
+function parseAxisBankText(text) {
+  return [];
+}
+
 function extractTransactionsFromText(text) {
-  const results = [];
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-
-  // Pattern: date at start of line, then description, then amount(s)
-  // Covers SBI, HDFC, ICICI, Axis, Kotak, Canara, PNB, BOI formats
-  const dateRe = /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b/;
-  const amtRe  = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/g;
-
-  lines.forEach((line, idx) => {
-    const dateMatch = line.match(dateRe);
-    if (!dateMatch) return;
-
-    const date = parseDate(dateMatch[1]);
-    if (!date) return;
-
-    // Remove the date from the line
-    let rest = line.replace(dateMatch[0], '').trim();
-
-    // Find all numbers in the rest
-    const nums = [...rest.matchAll(amtRe)].map(m => parseFloat(m[1].replace(/,/g, '')));
-    if (!nums.length) return;
-
-    // Heuristic: in bank statements last 1-2 numbers are balance; debit is before that
-    // Try to detect debit: look for "Dr" or take second-to-last number if >0
-    const isDr = /\bdr\b|\bdebit\b|\bwithdraw/i.test(rest);
-    const isCr = /\bcr\b|\bcredit\b|\bdeposit/i.test(rest);
-    if (isCr && !isDr) return; // skip credits/income
-
-    // Clean up description: remove numbers and common noise words
-    let desc = rest
-      .replace(amtRe, '')
-      .replace(/\b(dr|cr|neft|upi|imps|rtgs|atm|pos|bal|balance|ref|no|transaction|transfer|chq|clg|ach|ecs|nach|inb|mob|net)\b/gi, ' ')
-      .replace(/[\/\-\|#*:]+/g, ' ')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-
-    // Use the biggest number that's not the balance (last number usually is balance)
-    const amt = nums.length >= 2 ? nums[nums.length - 2] : nums[0];
-    if (!amt || amt <= 0) return;
-
-    const { cat, confidence } = autoClassify(desc + ' ' + line);
-    results.push({ id: Date.now() + idx, date, cat, confidence, amt, note: desc });
-  });
-
-  return results;
+  return parseAxisBankText(text);
 }
 
 //  Review Modal 
@@ -1730,11 +2110,71 @@ async function confirmImport() {
 function showImportPreview() {}  // kept for compatibility
 
 // ── Clear Data ────────────────────────────────────────────────
-function confirmClear() {
-  // Set the month label in modal
-  const el = document.getElementById('clearMonthLabel');
-  if (el) el.textContent = monthName(currentYear, currentMonth);
+async function confirmClear() {
   document.getElementById('clearModal').style.display = 'flex';
+  document.getElementById('clearConfirmInput') && (document.getElementById('clearConfirmInput').value = '');
+  document.querySelector('input[name="clearScope"][value="month"]').checked = true;
+  updateClearUI();
+
+  // Load live stats
+  try {
+    const all = await getAllExpensesAllMonths();
+    const monthExpenses = all.filter(e => {
+      const [y, m] = (e.date || '').split('-');
+      return parseInt(y) === currentYear && parseInt(m) === currentMonth + 1;
+    });
+    const totalDebit = all.filter(e => e.type !== 'credit').reduce((s,e) => s + e.amt, 0);
+
+    document.getElementById('cStatMonthCount').textContent = monthExpenses.length;
+    document.getElementById('cStatAllCount').textContent   = all.length;
+    document.getElementById('cStatDebit').textContent      = '₹' + fmt(totalDebit);
+    document.getElementById('clearMonthCount').textContent = monthExpenses.length + ' entries';
+    document.getElementById('clearAllCount').textContent   = all.length + ' entries';
+  } catch(e) {
+    // Stats unavailable — just show modal without counts
+  }
+
+  // Set month label
+  const el = document.getElementById('clearMonthLabel');
+  if (el) el.textContent = 'Transactions for ' + monthName(currentYear, currentMonth);
+}
+
+async function getAllExpensesAllMonths() {
+  // In localStorage mode, scan all expense keys
+  if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+    const all = [];
+    Object.keys(localStorage).filter(k => k.startsWith('expenses_')).forEach(k => {
+      try { all.push(...JSON.parse(localStorage.getItem(k))); } catch(e) {}
+    });
+    return all;
+  }
+  // For Google Sheets, just return current month (full scan not implemented)
+  return await getExpenses();
+}
+
+function updateClearUI() {
+  const scope = document.querySelector('input[name="clearScope"]:checked')?.value;
+  const confirmBox = document.getElementById('clearConfirmBox');
+  const btn = document.getElementById('clearConfirmBtn');
+  if (scope === 'all') {
+    confirmBox.style.display = 'block';
+    btn.textContent = 'Clear All Data';
+    btn.style.opacity = '0.5';
+    btn.disabled = true;
+  } else {
+    confirmBox.style.display = 'none';
+    btn.textContent = 'Clear Month';
+    btn.style.opacity = '1';
+    btn.disabled = false;
+  }
+}
+
+function updateClearBtn() {
+  const val = document.getElementById('clearConfirmInput').value.trim();
+  const btn = document.getElementById('clearConfirmBtn');
+  const valid = val === 'DELETE';
+  btn.disabled = !valid;
+  btn.style.opacity = valid ? '1' : '0.5';
 }
 
 function closeClearModal() {
@@ -1743,49 +2183,47 @@ function closeClearModal() {
 
 async function executeClear() {
   const scope = document.querySelector('input[name="clearScope"]:checked').value;
-  const btn = document.querySelector('#clearModal .btn');
+  if (scope === 'all') {
+    const val = document.getElementById('clearConfirmInput').value.trim();
+    if (val !== 'DELETE') { showToast('Type DELETE to confirm', 'error'); return; }
+  }
+
+  const btn = document.getElementById('clearConfirmBtn');
   btn.disabled = true; btn.textContent = 'Clearing…';
 
   try {
     if (scope === 'month') {
       await clearMonth(currentYear, currentMonth);
-      showToast('Transactions cleared for ' + monthName(currentYear, currentMonth));
+      showToast('Cleared ' + monthName(currentYear, currentMonth));
     } else {
       await clearAll();
       showToast('All data cleared');
     }
     closeClearModal();
-    // Invalidate all cache
     Object.keys(_cache).forEach(k => delete _cache[k]);
     await render();
   } catch(err) {
     showToast('Clear failed: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Clear Data';
+    btn.disabled = false;
+    btn.textContent = scope === 'all' ? 'Clear All Data' : 'Clear Month';
   }
 }
 
 async function clearMonth(year, month) {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // localStorage mode
     const key = `expenses_${year}_${String(month+1).padStart(2,'0')}`;
     localStorage.removeItem(key);
     return;
   }
-  // Google Sheets mode — delete all rows for this month
   const data = await apiFetch({ action: 'clearMonth', year, month: String(month+1).padStart(2,'0') });
   if (data.error) throw new Error(data.error);
 }
 
 async function clearAll() {
   if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
-    // localStorage mode — remove all expense keys
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('expenses_'))
-      .forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('expenses_')).forEach(k => localStorage.removeItem(k));
     return;
   }
-  // Google Sheets mode — clear entire sheet
   const data = await apiFetch({ action: 'clearAll' });
   if (data.error) throw new Error(data.error);
 }
