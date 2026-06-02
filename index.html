@@ -2098,7 +2098,7 @@ async function confirmImport() {
   if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
 
   try {
-    const clean = toImport.map(r => ({ id: r.id, date: r.date, cat: r.cat, amt: r.amt, note: r.note }));
+    const clean = toImport.map(r => ({ id: r.id, date: r.date, cat: r.cat, amt: r.amt, note: r.note, type: r.type || 'debit', bank: r.bank || '' }));
     await bulkAddToSheet(clean);
     closeReview();
     showToast(`${toImport.length} expenses imported!`);
