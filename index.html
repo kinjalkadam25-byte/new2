@@ -972,8 +972,40 @@
 <div class="toast" id="toast"></div>
 
 <!-- SheetJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- XLSX library with fallback -->
+<script>
+(function() {
+  function loadScript(src, onSuccess, onFail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onSuccess;
+    s.onerror = onFail;
+    document.head.appendChild(s);
+  }
+  // Try primary CDN, fallback to SheetJS CDN
+  loadScript(
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    function() { console.log('XLSX loaded from cdnjs'); },
+    function() {
+      console.warn('cdnjs XLSX failed, trying unpkg...');
+      loadScript(
+        'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+        function() { console.log('XLSX loaded from unpkg'); },
+        function() {
+          console.warn('unpkg XLSX failed, trying jsdelivr...');
+          loadScript(
+            'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+            function() { console.log('XLSX loaded from jsdelivr'); },
+            function() { console.error('All XLSX CDNs failed. CSV import unavailable.'); }
+          );
+        }
+      );
+    }
+  );
+})();
+</script>
 <!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   if (typeof pdfjsLib !== 'undefined') {
@@ -1033,6 +1065,7 @@ function showDashboard(username) {
   document.getElementById('userNameDisplay').textContent = username;
   const sub = document.getElementById('topbarSub');
   if (sub) sub.textContent = 'Welcome back, ' + username;
+  setupDropZone();
   init();
 }
 
@@ -1052,7 +1085,7 @@ window.onload = function() {
 //  Paste your deployed Apps Script Web App URL below.
 //  See Code.gs for step-by-step deployment instructions.
 // 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9pALAjN_EDDkIp1-OZf_y-qLa5jnTtN53Dse1vUzzIim93eYZixBufxwlgNCQ7_4W/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ApSqJ1Nn6nV_FlF_-3pRKKdYyszZ254Ah24-vLGye3tkhccIRpP-rp1chHx6Hh2w/exec";
 // 
 
 const CATEGORIES = [
@@ -1103,7 +1136,7 @@ const CAT_COLORS = [
   // Investments — light green #E8F5E9
   "#E8F5E9","#E8F5E9",
   // Internal Transfers
-  "#E8F5E9",
+  "#E8F5G9",
   // Personal Care — light peach #FFF0F5
   "#FFF0F5","#FFF0F5",
   // Miscellaneous
@@ -1667,8 +1700,9 @@ function parseDate(rawDate) {
 //  Import Logic 
 let pendingImportRows = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+function setupDropZone() {
   const zone = document.getElementById('dropZone');
+  if (!zone) return;
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
   zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
   zone.addEventListener('drop', e => {
@@ -1677,18 +1711,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = e.dataTransfer.files[0];
     if (file) processImportFile(file);
   });
-});
+}
 
 function handleImport(input) {
-  if (input.files[0]) processImportFile(input.files[0]);
+  if (input.files && input.files[0]) {
+    processImportFile(input.files[0]);
+  }
 }
 
 function processImportFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (ext === 'pdf') {
-    parsePDF(file);
-  } else {
-    parseExcelCSV(file);
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    console.log('Importing file:', file.name, 'type:', ext, 'size:', file.size);
+
+    if (ext === 'pdf') {
+      if (typeof pdfjsLib === 'undefined') {
+        showToast('PDF library not loaded. Try CSV instead.', 'error'); return;
+      }
+      showToast('Reading PDF…');
+      parsePDF(file);
+    } else if (['xlsx','xls','csv'].includes(ext)) {
+      if (typeof XLSX === 'undefined') {
+        // Wait up to 3 seconds for XLSX to load then retry
+        showToast('Loading XLSX library…');
+        let attempts = 0;
+        const wait = setInterval(() => {
+          attempts++;
+          if (typeof XLSX !== 'undefined') {
+            clearInterval(wait);
+            showToast('Reading ' + file.name + '…');
+            parseExcelCSV(file);
+          } else if (attempts > 15) {
+            clearInterval(wait);
+            showToast('XLSX library failed to load. Check your internet connection.', 'error');
+          }
+        }, 200);
+        return;
+      }
+      showToast('Reading ' + file.name + '…');
+      parseExcelCSV(file);
+    } else {
+      showToast('Unsupported file type. Use .csv, .xlsx or .pdf', 'error');
+    }
+  } catch(err) {
+    showToast('Import error: ' + err.message, 'error');
+    console.error('Import error:', err);
   }
 }
 
@@ -1697,9 +1764,23 @@ function processImportFile(file) {
 // Row 1: blank  |  Row 2: Tran Date, PARTICULARS, Credit, Debit  |  Row 3+: data
 function parseExcelCSV(file) {
   const reader = new FileReader();
+
+  reader.onerror = function() {
+    showToast('Could not read file. Try again.', 'error');
+    console.error('FileReader error:', reader.error);
+  };
+
   reader.onload = function(e) {
     try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
+      let wb;
+      // For CSV files, try reading as text first for better compatibility
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(e.target.result));
+        wb = XLSX.read(text, { type: 'string' });
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: false });
+      }
+
       const sheet = wb.Sheets[wb.SheetNames[0]];
 
       // Read as raw 2D array — safest for files with blank first rows
